@@ -1,0 +1,55 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gakoBlue" x1="24" y1="18" x2="82" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34E3E2"></stop>
+      <stop offset="1" stop-color="#0A66D9"></stop>
+    </linearGradient>
+    <linearGradient id="gakoGreen" x1="56" y1="70" x2="100" y2="118" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C7F74A"></stop>
+      <stop offset="1" stop-color="#00A63E"></stop>
+    </linearGradient>
+    <linearGradient id="gakoBeak" x1="79" y1="33" x2="111" y2="63" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE14A"></stop>
+      <stop offset="1" stop-color="#FF9A00"></stop>
+    </linearGradient>
+    <linearGradient id="gakoDark" x1="62" y1="44" x2="89" y2="74" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B2F8E"></stop>
+      <stop offset="1" stop-color="#0046C7"></stop>
+    </linearGradient>
+    <filter id="softShadow" x="10" y="10" width="110" height="112" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.18"></feDropShadow>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <!-- Crest -->
+    <path d="M28 41C39 27 56 21 76 22C67 26 61 31 59 36C49 35 39 37 28 41Z" fill="#1BD6D6"></path>
+    <path d="M27 42C39 24 58 16 83 18C72 20 63 26 59 36C48 35 37 37 27 42Z" fill="url(#gakoBlue)"></path>
+
+    <!-- Head / body -->
+    <path d="M36 44C42 34 53 28 67 28C88 28 104 43 104 64C104 88 89 106 67 114C48 121 29 108 26 85C24 69 28 54 36 44Z" fill="url(#gakoBlue)"></path>
+
+    <!-- Face patch -->
+    <path d="M53 34C73 31 89 43 89 61C89 76 77 87 60 87C43 87 34 77 34 61C34 48 42 37 53 34Z" fill="#EAF7FF" fill-opacity="0.92"></path>
+
+    <!-- Eye -->
+    <circle cx="68" cy="49" r="8" fill="#082A7A"></circle>
+    <circle cx="71" cy="46" r="2.7" fill="white"></circle>
+
+    <!-- Beak -->
+    <path d="M79 41C94 38 108 44 111 55C114 65 106 77 94 82C100 71 98 58 79 41Z" fill="url(#gakoBeak)"></path>
+    <path d="M79 41C89 49 93 55 93 61C93 67 88 72 81 73C84 67 84 58 79 41Z" fill="#FF9A00"></path>
+    <path d="M77 53C81 51 85 52 88 55" stroke="#8B2F00" stroke-width="3.2" stroke-linecap="round"></path>
+
+    <!-- Inner blue sweep -->
+    <path d="M56 64C66 57 75 53 84 54C77 70 67 81 53 92C45 84 46 72 56 64Z" fill="url(#gakoDark)"></path>
+
+    <!-- Green wing/leaf -->
+    <path d="M50 72C65 69 79 73 91 84C97 90 99 100 96 110C80 104 65 107 49 121C40 102 40 84 50 72Z" fill="url(#gakoGreen)"></path>
+    <path d="M58 78C69 78 79 82 88 91C79 91 67 98 57 110C53 98 53 87 58 78Z" fill="#F2FFAE" fill-opacity="0.55"></path>
+
+    <!-- Sparkles -->
+    <path d="M40 66L41.7 61L43.4 66L48 67.7L43.4 69.4L41.7 74L40 69.4L35.4 67.7L40 66Z" fill="#EAFDFF"></path>
+    <path d="M71 92L72.1 88.8L73.2 92L76.4 93.1L73.2 94.2L72.1 97.4L71 94.2L67.8 93.1L71 92Z" fill="#F6FFE0"></path>
+  </g>
+</svg>
