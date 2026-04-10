@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, isToday, isTomorrow, differenceInCalendarDays } from 'date-fns';
 import { CalendarDays, ChevronRight, Loader2 } from 'lucide-react';
 import { useEarningsData, getEarningsTiming } from '../hooks/useEarningsData';
+import { useLanguage } from '../LanguageContext';
 
 // ── Timing badge ──────────────────────────────────────────────────────────────
 function TimingPill({ timing }) {
@@ -20,12 +21,12 @@ function TimingPill({ timing }) {
 }
 
 // ── Time label ────────────────────────────────────────────────────────────────
-function timeLabel(dateStr) {
+function timeLabel(dateStr, t) {
   const d = new Date(dateStr + 'T12:00:00');
-  if (isToday(d))    return 'Today';
-  if (isTomorrow(d)) return 'Tomorrow';
+  if (isToday(d))    return t('earnings_today_badge');
+  if (isTomorrow(d)) return t('earnings_tomorrow');
   const diff = differenceInCalendarDays(d, new Date());
-  return `in ${diff}d`;
+  return `${t('earnings_in_days')} ${diff}d`;
 }
 
 function isUrgent(dateStr) {
@@ -33,19 +34,20 @@ function isUrgent(dateStr) {
 }
 
 // ── Date section label ────────────────────────────────────────────────────────
-function sectionLabel(dateStr) {
+function sectionLabel(dateStr, t, lang) {
   const d = new Date(dateStr + 'T12:00:00');
-  if (isToday(d))    return 'Today';
-  if (isTomorrow(d)) return 'Tomorrow';
+  if (isToday(d))    return t('earnings_today_badge');
+  if (isTomorrow(d)) return t('earnings_tomorrow');
   return format(d, 'EEE, MMM d');
 }
 
 // ── Single earnings row ───────────────────────────────────────────────────────
 function EarningsRow({ item }) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const timing   = getEarningsTiming(item.earningsTimestamp);
   const urgent   = isUrgent(item.date);
-  const label    = timeLabel(item.date);
+  const label    = timeLabel(item.date, t);
 
   return (
     <button
@@ -84,6 +86,7 @@ function EarningsRow({ item }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function EarningsSidebarCard() {
   const navigate = useNavigate();
+  const { t, lang } = useLanguage();
   const { data: earningsData = [], isLoading } = useEarningsData();
 
   // Group by date, max 3 dates, 3 per date
@@ -101,11 +104,11 @@ export default function EarningsSidebarCard() {
       .slice(0, 4)
       .map(date => ({
         date,
-        label: sectionLabel(date),
+        label: sectionLabel(date, t, lang),
         items: byDate[date].slice(0, 3),
         extra: Math.max(0, byDate[date].length - 3),
       }));
-  }, [earningsData]);
+  }, [earningsData, t, lang]);
 
   return (
     <div className="rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-100 overflow-hidden">
@@ -115,14 +118,14 @@ export default function EarningsSidebarCard() {
         <div className="flex items-center gap-2">
           <CalendarDays className="w-3.5 h-3.5 dark:text-gray-500 text-gray-400" />
           <h2 className="text-sm font-semibold dark:text-white text-gray-900">
-            Upcoming Earnings
+            {t('upcoming_earnings')}
           </h2>
         </div>
         <button
           onClick={() => navigate('/Earnings')}
           className="flex items-center gap-0.5 text-[11px] font-medium dark:text-gray-600 text-gray-400 dark:hover:text-gray-400 hover:text-gray-600 transition-colors"
         >
-          Calendar <ChevronRight className="w-3 h-3" />
+          {t('earnings_calendar_view')} <ChevronRight className="w-3 h-3" />
         </button>
       </div>
 
@@ -134,7 +137,7 @@ export default function EarningsSidebarCard() {
           </div>
         ) : groups.length === 0 ? (
           <p className="text-xs dark:text-gray-600 text-gray-400 text-center py-6">
-            No upcoming earnings
+            {t('no_upcoming_earnings')}
           </p>
         ) : (
           <div>

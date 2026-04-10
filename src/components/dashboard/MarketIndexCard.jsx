@@ -160,10 +160,10 @@ export default function MarketIndexCard({ symbol, label, color = '#3b82f6', tool
           : 'No data'}
       </p>
 
-      {/* Sparkline */}
+      {/* Sparkline — neutral accent color, not gain/loss tinted */}
       {sparkline.length >= 2 && (
         <div className="h-9 -mx-1">
-          <MiniSparkline data={sparkline} color={trendColor} height={36} filled />
+          <MiniSparkline data={sparkline} color={color} height={36} filled />
         </div>
       )}
     </div>

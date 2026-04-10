@@ -109,8 +109,10 @@ export async function searchStocks(query) {
  *   beta, dividendYield, sector, industry, description
  */
 export async function getStockData(symbol) {
+  // range=60d gives 60 daily candles — used to compute avgVolume.
+  // Meta fields (price, 52w, etc.) are unaffected by range.
   const url =
-    `${YF_CHART}/${encodeURIComponent(symbol)}?interval=1d&range=5d&includePrePost=true`;
+    `${YF_CHART}/${encodeURIComponent(symbol)}?interval=1d&range=60d&includePrePost=true`;
 
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Stock data failed (HTTP ${res.status})`);
@@ -125,9 +127,18 @@ export async function getStockData(symbol) {
   const { change, changePercent } = calcChange(price, prevClose);
   const marketStatus = deriveMarketState(m.currentTradingPeriod);
 
+  // Compute 60-day average daily volume from the candle series.
+  // Yahoo's v10/quoteSummary (which provided avgVolume) returns 401 without
+  // browser auth cookies, so we derive it from the chart data instead.
+  const rawVolumes = result.indicators?.quote?.[0]?.volume ?? [];
+  const validVols  = rawVolumes.filter(v => v != null && Number.isFinite(v) && v > 0);
+  const avgVolume  = validVols.length
+    ? Math.round(validVols.reduce((sum, v) => sum + v, 0) / validVols.length)
+    : null;
+
   console.log('[yahooChart] loaded', m.symbol, {
     name: m.shortName, price, change: change?.toFixed(2),
-    changePercent: changePercent?.toFixed(2), marketStatus,
+    changePercent: changePercent?.toFixed(2), marketStatus, avgVolume,
   });
 
   return {
@@ -141,6 +152,7 @@ export async function getStockData(symbol) {
     dayHigh:          m.regularMarketDayHigh ?? null,
     dayLow:           m.regularMarketDayLow  ?? null,
     volume:           m.regularMarketVolume  ?? null,
+    avgVolume,                                          // computed from 60-day candles
     fiftyTwoWeekHigh: m.fiftyTwoWeekHigh     ?? null,
     fiftyTwoWeekLow:  m.fiftyTwoWeekLow      ?? null,
     exchange:         m.fullExchangeName || m.exchangeName || null,
@@ -153,8 +165,8 @@ export async function getStockData(symbol) {
     afterHoursPrice:         m.postMarketPrice         ?? null,
     afterHoursChange:        m.postMarketChange        ?? null,
     afterHoursChangePercent: m.postMarketChangePercent ?? null,
-    // Not available from v8/chart — remain null (show N/A in UI)
-    marketCap: null, peRatio: null, eps: null, avgVolume: null,
+    // Not available from v8/chart
+    marketCap: null, peRatio: null, eps: null,
     beta: null, dividendYield: null, revenueGrowth: null,
     roe: null, debtToEquity: null,
     sector: null, industry: null, description: null,
@@ -288,6 +300,7 @@ export async function getStockFundamentals(symbol) {
     forwardPE:         rawVal(ks.forwardPE),
     priceToBook:       rawVal(ks.priceToBook),
     sharesOutstanding: rawVal(ks.sharesOutstanding) ?? rawVal(ks.impliedSharesOutstanding),
+    floatShares:       rawVal(ks.floatShares),
   };
   console.log('[metrics] sourceA (summaryDetail/keyStats):', sourceA);
 
@@ -323,6 +336,7 @@ export async function getStockFundamentals(symbol) {
     // Volume / shares
     avgVolume:         sourceA.avgVolume          ?? sourceB.avgVolume ?? null,
     sharesOutstanding: sourceA.sharesOutstanding  ?? null,
+    floatShares:       sourceA.floatShares        ?? null,
     // Risk / income
     beta:              sourceA.beta               ?? null,
     dividendYield:     sourceA.dividendYield      ?? null,

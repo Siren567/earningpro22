@@ -10,12 +10,16 @@ export default function NotificationPanel() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
 
+  // Base44 is non-functional (404s). Disable the query so it never fires and
+  // never consumes connection slots or triggers React Query retries.
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
       const me = await base44.auth.me();
       return await base44.entities.NotificationHistory.filter({ user_email: me.email }, '-created_date', 20);
     },
+    enabled: false,
+    retry: false,
   });
 
   const markAsRead = useMutation({
@@ -32,7 +36,7 @@ export default function NotificationPanel() {
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
             <>
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 dark:border-[#0a0a0f] border-white" />
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 dark:border-[#0D1628] border-white" />
               <span className="absolute -top-1 -right-1 text-[10px] font-bold bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
@@ -42,13 +46,13 @@ export default function NotificationPanel() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0 dark:bg-[#1a1a2e] dark:border-white/10" align="end">
         <div className="p-4 border-b dark:border-white/5">
-          <h3 className="font-semibold dark:text-white text-gray-900">Notifications</h3>
-          <p className="text-xs dark:text-gray-500 text-gray-500">{unreadCount} unread</p>
+          <h3 className="font-semibold dark:text-white text-gray-900">{t('notifications_title')}</h3>
+          <p className="text-xs dark:text-gray-500 text-gray-500">{unreadCount} {t('notifications_unread')}</p>
         </div>
         <div className="max-h-96 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="p-6 text-center">
-              <p className="text-sm dark:text-gray-500 text-gray-500">No notifications</p>
+              <p className="text-sm dark:text-gray-500 text-gray-500">{t('no_notifications')}</p>
             </div>
           ) : (
             notifications.map((notif) => (

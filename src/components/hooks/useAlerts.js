@@ -6,12 +6,16 @@ import {
   toggleAlert as svcToggle,
   removeAlert as svcRemove,
 } from '@/lib/alerts';
+import { getPlanLimits, getEffectivePlan } from '../../lib/planConfig';
 
 const QUERY_KEY = 'userAlerts';
 
 export function useAlerts() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const qc = useQueryClient();
+
+  const plan        = getEffectivePlan(profile?.subscription_plan);
+  const alertsLimit = getPlanLimits(plan).alertsLimit;
 
   const { data: alerts = [], isLoading } = useQuery({
     queryKey: [QUERY_KEY, user?.id],
@@ -69,9 +73,12 @@ export function useAlerts() {
     onSettled: invalidate,
   });
 
+  const isAtAlertsLimit = alerts.length >= alertsLimit;
+
   /**
    * Toggle convenience: if alert exists → toggle is_enabled,
-   * if not → create it enabled.
+   * if not → create it (gated by plan limit).
+   * Returns 'LIMIT_REACHED' when the free cap is hit.
    */
   const toggleSymbolAlert = (symbol) => {
     if (!user) return;
@@ -79,8 +86,14 @@ export function useAlerts() {
     if (existing) {
       toggleAlertMutation.mutate({ id: existing.id, isEnabled: !existing.is_enabled });
     } else {
+      if (alerts.length >= alertsLimit) return 'LIMIT_REACHED';
       addAlertMutation.mutate({ symbol });
     }
+  };
+
+  const addAlert = (symbol) => {
+    if (alerts.length >= alertsLimit) return 'LIMIT_REACHED';
+    addAlertMutation.mutate({ symbol });
   };
 
   return {
@@ -88,7 +101,10 @@ export function useAlerts() {
     alertedSymbols,
     alertsBySymbol,
     isLoading,
-    addAlert: (symbol) => addAlertMutation.mutate({ symbol }),
+    alertsLimit,
+    isAtAlertsLimit,
+    plan,
+    addAlert,
     toggleAlert: (id, isEnabled) => toggleAlertMutation.mutate({ id, isEnabled }),
     removeAlert: (id) => removeAlertMutation.mutate({ id }),
     toggleSymbolAlert,

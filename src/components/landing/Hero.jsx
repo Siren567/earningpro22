@@ -39,7 +39,7 @@ export default function Hero() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border dark:border-[#4CBFF5]/25 border-blue-500/30 dark:bg-[#4CBFF5]/5 bg-blue-50 mb-6 sm:mb-8 glow-accent-sm">
             <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#4CBFF5]" />
-            <span className="text-xs sm:text-sm font-medium text-[#4CBFF5]">AI-Powered Analysis</span>
+            <span className="text-xs sm:text-sm font-medium text-[#4CBFF5]">{t('hero_ai_powered')}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold dark:text-white text-gray-900 tracking-tight mb-3 sm:mb-4 leading-[1.15]">
@@ -57,7 +57,7 @@ export default function Hero() {
               onClick={handleGetStarted}
               className="gradient-primary gradient-primary-hover text-white h-12 px-8 text-base font-medium rounded-xl gap-2 w-full sm:w-auto border-0"
             >
-              Get Started Free
+              {t('hero_get_started')}
               <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
             <a href="#features" className="w-full sm:w-auto">

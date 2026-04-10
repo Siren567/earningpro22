@@ -1,7 +1,16 @@
 import React from 'react';
 import { useLanguage } from '../LanguageContext';
 import { useLogout } from '../auth/useLogout';
-import { User, LogOut, CreditCard, Calendar, Bell, Settings } from 'lucide-react';
+import { LogOut, CreditCard, Bell, Settings } from 'lucide-react';
+
+function getInitials(first, last) {
+  const f = (first || '').trim();
+  const l = (last  || '').trim();
+  if (f && l) return (f[0] + l[0]).toUpperCase();
+  if (f)      return f[0].toUpperCase();
+  if (l)      return l[0].toUpperCase();
+  return 'U';
+}
 import { format } from 'date-fns';
 import {
   DropdownMenu,
@@ -20,12 +29,13 @@ export default function UserDropdown({ profile }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="w-9 h-9 rounded-full bg-blue-500/20 border-2 border-blue-500/30 flex items-center justify-center hover:border-blue-500/50 transition-colors">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} className="w-full h-full rounded-full object-cover" />
-          ) : (
-            <User className="w-4 h-4 text-blue-500" />
-          )}
+        <button
+          className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-blue-500/30 hover:border-blue-500/50 transition-colors overflow-hidden flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)' }}
+        >
+          <span className="text-[13px] font-semibold text-white leading-none select-none">
+            {getInitials(profile?.first_name, profile?.last_name)}
+          </span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 dark:bg-[#1a1a2e] dark:border-white/10" align="end">

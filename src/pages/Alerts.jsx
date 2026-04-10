@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   Bell, Trash2, CalendarClock, Loader2,
-  BellRing, BellOff, ShieldAlert, CheckCircle2, FlaskConical, Clock,
+  BellRing, BellOff, ShieldAlert, CheckCircle2, FlaskConical, Clock, Crown,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
 import { useAlerts } from '../components/hooks/useAlerts';
@@ -54,7 +55,7 @@ const PUSH_STATES = {
 
 export default function Alerts() {
   const { user } = useAuth();
-  const { alerts, isLoading, toggleAlert, removeAlert } = useAlerts();
+  const { alerts, isLoading, toggleAlert, removeAlert, alertsLimit, isAtAlertsLimit, plan } = useAlerts();
   const {
     status: pushStatus,
     actionLoading: pushLoading,
@@ -172,6 +173,46 @@ export default function Alerts() {
             {earningsAlerts.length} alert{earningsAlerts.length !== 1 ? 's' : ''}
           </span>
         </div>
+
+        {/* Free plan usage bar */}
+        {plan === 'free' && !isLoading && (
+          <div className={`flex items-center justify-between px-5 py-2.5 border-b dark:border-white/5 border-gray-100 ${
+            isAtAlertsLimit
+              ? 'dark:bg-amber-500/5 bg-amber-50'
+              : 'dark:bg-white/[0.02] bg-gray-50/60'
+          }`}>
+            <div className="flex items-center gap-2">
+              <div className="flex gap-0.5">
+                {Array.from({ length: alertsLimit }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-1.5 w-5 rounded-full ${
+                      i < earningsAlerts.length
+                        ? isAtAlertsLimit ? 'bg-amber-400' : 'bg-blue-500'
+                        : 'dark:bg-white/10 bg-gray-200'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className={`text-[11px] font-medium ${
+                isAtAlertsLimit
+                  ? 'text-amber-400'
+                  : 'dark:text-gray-500 text-gray-500'
+              }`}>
+                {earningsAlerts.length}/{alertsLimit} alerts used · Free plan
+              </span>
+            </div>
+            {isAtAlertsLimit && (
+              <Link
+                to="/Plans"
+                className="flex items-center gap-1 text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                <Crown className="w-3 h-3" />
+                Upgrade
+              </Link>
+            )}
+          </div>
+        )}
 
         <div className="p-4">
           {isLoading ? (

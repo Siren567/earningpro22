@@ -1,18 +1,20 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Calendar as CalendarIcon, List, ChevronLeft, ChevronRight, Loader2, TrendingUp,
-  TrendingDown, Minus, ChevronDown, ChevronUp, ExternalLink, Bell, BellOff,
+  TrendingDown, Minus, ChevronDown, ChevronUp, ExternalLink, Bell, BellOff, Crown,
 } from 'lucide-react';
 import GakoIcon from '@/assets/GakoIcon';
 import { Button } from '@/components/ui/button';
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
-  isToday, addMonths, subMonths,
+  isToday, addMonths, subMonths, addDays,
 } from 'date-fns';
 import StockLogo from '../components/stock/StockLogo';
 import { useAlerts } from '../components/hooks/useAlerts';
 import { useEarningsData } from '../components/hooks/useEarningsData';
+import { useSubscription } from '../components/hooks/useSubscription';
+import { useLanguage } from '../components/LanguageContext';
 
 // ─── Mock AI analysis generator ───────────────────────────────────────────────
 function generateMockAnalysis(symbol, companyName) {
@@ -53,6 +55,7 @@ function generateMockAnalysis(symbol, companyName) {
 
 // ─── AI Analysis Panel ────────────────────────────────────────────────────────
 function AIPanel({ item, onNavigate }) {
+  const { t } = useLanguage();
   const { trend, risk, confidence, expectations, bulls, bears, summary } =
     useMemo(() => generateMockAnalysis(item.symbol, item.companyName), [item.symbol]);
 
@@ -71,38 +74,38 @@ function AIPanel({ item, onNavigate }) {
     ? 'dark:bg-red-500/10 bg-red-50 text-red-400'
     : 'dark:bg-amber-500/10 bg-amber-50 text-amber-400';
   const confColor = confidence >= 70 ? 'bg-green-500' : confidence >= 40 ? 'bg-blue-500' : 'bg-amber-500';
-  const confLabel = confidence >= 70 ? 'High confidence' : confidence >= 40 ? 'Medium confidence' : 'Low confidence';
+  const confLabel = confidence >= 70 ? t('earnings_high_conf') : confidence >= 40 ? t('earnings_med_conf') : t('earnings_low_conf');
 
   return (
     <div className="px-4 py-4 dark:bg-white/[0.02] bg-gray-50/60 border-b dark:border-white/5 border-gray-100 animate-in fade-in slide-in-from-top-1 duration-150">
       {/* Header */}
       <div className="flex items-center gap-1.5 mb-3">
         <GakoIcon size={22} className="flex-shrink-0" />
-        <span className="text-[11px] font-semibold uppercase tracking-widest dark:text-gray-400 text-gray-500">Gako Insights</span>
+        <span className="text-[11px] font-semibold uppercase tracking-widest dark:text-gray-400 text-gray-500">{t('earnings_gako_insights')}</span>
         <span className="text-[9px] dark:text-gray-700 text-gray-300 opacity-50 select-none">V1</span>
         <button
           onClick={() => onNavigate(item.symbol)}
           className="ml-auto flex items-center gap-1 text-[11px] dark:text-cyan-400 text-blue-600 dark:hover:text-blue-300 hover:text-blue-800 transition-colors"
         >
-          Open Stock View <ExternalLink className="w-3 h-3" />
+          {t('earnings_open_stock')} <ExternalLink className="w-3 h-3" />
         </button>
       </div>
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
         <div className={`rounded-lg border px-3 py-2.5 ${trendBg}`}>
-          <p className="text-[10px] uppercase tracking-wide dark:text-gray-500 text-gray-500 mb-1">Trend</p>
+          <p className="text-[10px] uppercase tracking-wide dark:text-gray-500 text-gray-500 mb-1">{t('earnings_trend')}</p>
           <div className={`flex items-center gap-1 font-semibold text-sm ${trendColor}`}>
             <TrendIcon className="w-3.5 h-3.5" />
             {trend}
           </div>
         </div>
         <div className="rounded-lg dark:bg-white/5 bg-white border dark:border-white/5 border-gray-200 px-3 py-2.5">
-          <p className="text-[10px] uppercase tracking-wide dark:text-gray-500 text-gray-500 mb-1">Risk</p>
+          <p className="text-[10px] uppercase tracking-wide dark:text-gray-500 text-gray-500 mb-1">{t('earnings_risk_label')}</p>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${riskColor}`}>{risk}</span>
         </div>
         <div className="rounded-lg dark:bg-white/5 bg-white border dark:border-white/5 border-gray-200 px-3 py-2.5 col-span-2">
-          <p className="text-[10px] uppercase tracking-wide dark:text-gray-500 text-gray-500 mb-1.5">Confidence Score</p>
+          <p className="text-[10px] uppercase tracking-wide dark:text-gray-500 text-gray-500 mb-1.5">{t('earnings_confidence_score')}</p>
           <div className="flex items-center gap-2 mb-1">
             <div className="flex-1 h-1.5 rounded-full dark:bg-white/5 bg-gray-200 overflow-hidden">
               <div className={`h-full rounded-full transition-all ${confColor}`} style={{ width: `${confidence}%` }} />
@@ -116,21 +119,21 @@ function AIPanel({ item, onNavigate }) {
       {/* Text sections */}
       <div className="space-y-2">
         <div className="rounded-lg dark:bg-white/5 bg-white border dark:border-white/5 border-gray-200 px-3 py-2.5">
-          <p className="text-[10px] uppercase tracking-wide dark:text-gray-500 text-gray-500 mb-1">Market Expectations</p>
+          <p className="text-[10px] uppercase tracking-wide dark:text-gray-500 text-gray-500 mb-1">{t('earnings_market_exp')}</p>
           <p className="text-xs dark:text-gray-300 text-gray-700 leading-relaxed">{expectations}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="rounded-lg dark:bg-green-500/5 bg-green-50/60 border dark:border-green-500/15 border-green-200 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-wide text-green-500 mb-1">Bull Scenario</p>
+            <p className="text-[10px] uppercase tracking-wide text-green-500 mb-1">{t('earnings_bull')}</p>
             <p className="text-xs dark:text-gray-300 text-gray-700 leading-relaxed">{bulls}</p>
           </div>
           <div className="rounded-lg dark:bg-red-500/5 bg-red-50/60 border dark:border-red-500/15 border-red-200 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-wide text-red-400 mb-1">Bear Scenario</p>
+            <p className="text-[10px] uppercase tracking-wide text-red-400 mb-1">{t('earnings_bear')}</p>
             <p className="text-xs dark:text-gray-300 text-gray-700 leading-relaxed">{bears}</p>
           </div>
         </div>
         <div className="rounded-lg dark:bg-blue-500/5 bg-blue-50/60 border dark:border-blue-500/10 border-blue-100 px-3 py-2.5">
-          <p className="text-[10px] uppercase tracking-wide text-blue-400 mb-1">Summary</p>
+          <p className="text-[10px] uppercase tracking-wide text-blue-400 mb-1">{t('earnings_summary')}</p>
           <p className="text-xs dark:text-gray-300 text-gray-700 leading-relaxed">{summary}</p>
         </div>
       </div>
@@ -141,11 +144,13 @@ function AIPanel({ item, onNavigate }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Earnings() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [view, setView] = useState('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarSelectedDate, setCalendarSelectedDate] = useState(null);
   const [expandedSymbol, setExpandedSymbol] = useState(null);
   const { alertedSymbols, toggleSymbolAlert } = useAlerts();
+  const { isPremium, limits } = useSubscription();
 
   const toggleExpand = (symbol) =>
     setExpandedSymbol(prev => prev === symbol ? null : symbol);
@@ -160,7 +165,14 @@ export default function Earnings() {
     }
   };
 
-  const { data: earningsData = [], isLoading } = useEarningsData();
+  const { data: rawEarningsData = [], isLoading } = useEarningsData();
+
+  // Free plan: limit earnings calendar to next N days
+  const earningsData = useMemo(() => {
+    if (isPremium) return rawEarningsData;
+    const cutoff = addDays(new Date(), limits.earningsWindowDays);
+    return rawEarningsData.filter(item => new Date(item.date + 'T12:00:00') <= cutoff);
+  }, [rawEarningsData, isPremium, limits.earningsWindowDays]);
 
   const earningsByDate = useMemo(() =>
     earningsData.reduce((acc, item) => {
@@ -198,9 +210,9 @@ export default function Earnings() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold dark:text-white text-gray-900">Earnings Calendar</h1>
+          <h1 className="text-2xl font-bold dark:text-white text-gray-900">{t('earnings_title')}</h1>
           <p className="text-sm dark:text-gray-500 text-gray-500 mt-0.5">
-            Upcoming earnings reports · {earningsData.length} companies
+            {earningsData.length} {t('earnings_upcoming_reports')}
           </p>
         </div>
         <div className="flex items-center gap-1 dark:bg-white/5 bg-gray-100 rounded-xl p-1 self-start sm:self-auto">
@@ -209,17 +221,35 @@ export default function Earnings() {
             onClick={() => { setView('list'); setExpandedSymbol(null); }}
             className={`rounded-lg gap-1.5 h-8 text-xs px-3 ${view === 'list' ? 'dark:bg-white/10 bg-white shadow-sm dark:text-white text-gray-900' : 'dark:text-gray-400 text-gray-600'}`}
           >
-            <List className="w-3.5 h-3.5" /> List
+            <List className="w-3.5 h-3.5" /> {t('earnings_list_view')}
           </Button>
           <Button
             variant="ghost" size="sm"
             onClick={() => { setView('calendar'); setExpandedSymbol(null); }}
             className={`rounded-lg gap-1.5 h-8 text-xs px-3 ${view === 'calendar' ? 'dark:bg-white/10 bg-white shadow-sm dark:text-white text-gray-900' : 'dark:text-gray-400 text-gray-600'}`}
           >
-            <CalendarIcon className="w-3.5 h-3.5" /> Calendar
+            <CalendarIcon className="w-3.5 h-3.5" /> {t('earnings_calendar_view')}
           </Button>
         </div>
       </div>
+
+      {/* ── Free plan limit banner ────────────────────────────────────────── */}
+      {!isPremium && (
+        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl dark:bg-amber-500/5 bg-amber-50 border dark:border-amber-400/15 border-amber-200">
+          <div className="flex items-center gap-2">
+            <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            <p className="text-xs dark:text-gray-300 text-gray-700">
+              {t('earnings_free_showing')} <span className="font-semibold">{limits.earningsWindowDays} {t('status_days')}</span> {t('earnings_free_plan')}
+            </p>
+          </div>
+          <Link
+            to="/Plans"
+            className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors whitespace-nowrap"
+          >
+            {t('earnings_upgrade_full')}
+          </Link>
+        </div>
+      )}
 
       {/* ── List View ──────────────────────────────────────────────────────── */}
       {view === 'list' && (
@@ -227,8 +257,8 @@ export default function Earnings() {
           {earningsData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
               <TrendingUp className="w-12 h-12 dark:text-gray-700 text-gray-300 mb-3" />
-              <h3 className="text-base font-semibold dark:text-white text-gray-900 mb-1">No upcoming earnings found</h3>
-              <p className="text-sm dark:text-gray-500 text-gray-500">Check back later</p>
+              <h3 className="text-base font-semibold dark:text-white text-gray-900 mb-1">{t('earnings_no_upcoming')}</h3>
+              <p className="text-sm dark:text-gray-500 text-gray-500">{t('earnings_check_back')}</p>
             </div>
           ) : (
             <>
@@ -236,9 +266,9 @@ export default function Earnings() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b dark:border-white/5 border-gray-200">
-                      <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-wide dark:text-gray-500 text-gray-500">Symbol</th>
-                      <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-wide dark:text-gray-500 text-gray-500 hidden sm:table-cell">Company</th>
-                      <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-wide dark:text-gray-500 text-gray-500">Date</th>
+                      <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-wide dark:text-gray-500 text-gray-500">{t('earnings_symbol')}</th>
+                      <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-wide dark:text-gray-500 text-gray-500 hidden sm:table-cell">{t('name')}</th>
+                      <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-wide dark:text-gray-500 text-gray-500">{t('date')}</th>
                       <th className="w-8" />
                       <th className="w-10" />
                     </tr>
@@ -270,7 +300,7 @@ export default function Earnings() {
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-sm dark:text-white text-gray-900">{format(d, 'MMM d, yyyy')}</span>
-                                {today && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 font-semibold">Today</span>}
+                                {today && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 font-semibold">{t('earnings_today_badge')}</span>}
                                 {item.isEstimate && <span className="text-[10px] dark:text-gray-600 text-gray-400">est.</span>}
                               </div>
                             </td>
@@ -317,7 +347,7 @@ export default function Earnings() {
                 </table>
               </div>
               <div className="px-4 py-3 border-t dark:border-white/5 border-gray-100 text-center">
-                <p className="text-[11px] dark:text-gray-600 text-gray-400">{earningsData.length} upcoming reports</p>
+                <p className="text-[11px] dark:text-gray-600 text-gray-400">{earningsData.length} {t('earnings_upcoming_reports')}</p>
               </div>
             </>
           )}
@@ -347,7 +377,7 @@ export default function Earnings() {
 
             {/* Day headers */}
             <div className="grid grid-cols-7 gap-1 mb-1">
-              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+              {[t('day_sun'),t('day_mon'),t('day_tue'),t('day_wed'),t('day_thu'),t('day_fri'),t('day_sat')].map(d => (
                 <div key={d} className="text-center text-[11px] font-medium dark:text-gray-600 text-gray-400 pb-2">{d}</div>
               ))}
             </div>
@@ -422,14 +452,14 @@ export default function Earnings() {
                     {format(new Date(calendarSelectedDate + 'T12:00:00'), 'EEEE, MMMM d')}
                   </p>
                   <p className="text-[11px] dark:text-gray-500 text-gray-500 mt-0.5">
-                    {selectedDayItems.length} {selectedDayItems.length === 1 ? 'company' : 'companies'} reporting · click a card to open Gako Insights
+                    {selectedDayItems.length} {selectedDayItems.length === 1 ? t('earnings_company') : t('earnings_companies')} · {t('earnings_click_gako')}
                   </p>
                 </div>
                 <button
                   onClick={() => { setCalendarSelectedDate(null); setExpandedSymbol(null); }}
                   className="text-[11px] dark:text-gray-500 text-gray-400 dark:hover:text-gray-300 hover:text-gray-600 transition-colors"
                 >
-                  Dismiss
+                  {t('earnings_dismiss')}
                 </button>
               </div>
 

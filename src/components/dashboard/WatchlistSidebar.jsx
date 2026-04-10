@@ -5,31 +5,8 @@ import { Plus, BookmarkX, TrendingUp, TrendingDown } from 'lucide-react';
 import { useWatchlist } from '../hooks/useWatchlist';
 import { useCustomLists } from '../hooks/useCustomLists';
 import { getStockQuote } from '@/api/yahooFinanceApi';
+import { useLanguage } from '../LanguageContext';
 import StockLogo from '../stock/StockLogo';
-import MiniSparkline from './MiniSparkline';
-
-// ── Deterministic mock sparkline ──────────────────────────────────────────────
-// When live OHLC data isn't available we still render a plausible trend so the
-// UI never shows a blank sparkline slot.  The pattern is seeded from the symbol
-// so each stock gets a unique but stable shape across re-renders.
-function mockSparkline(symbol, isPositive) {
-  let seed = Array.from(symbol).reduce((a, c) => a + c.charCodeAt(0), 0);
-  const rand = () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
-
-  const base   = 100;
-  const points = 8;
-  const drift  = isPositive ? 0.004 : -0.004;
-  const result = [base];
-
-  for (let i = 1; i < points; i++) {
-    const noise = (rand() - 0.5) * 3;
-    result.push(result[i - 1] * (1 + drift) + noise);
-  }
-  return result;
-}
 
 // ── Single watchlist row ──────────────────────────────────────────────────────
 function WatchlistRow({ symbol }) {
@@ -46,27 +23,14 @@ function WatchlistRow({ symbol }) {
   const price      = quote?.current;
   const pct        = quote?.percentChange;
   const isPositive = (pct ?? 0) >= 0;
-  // Price badge: green / red — only used for the % change text
   const trendColor = price == null ? '#6b7280' : isPositive ? '#34d399' : '#f87171';
-  // Sparkline: uniform soft blue — neutral, readable, not competing with price color
-  const sparkColor = '#60a5fa';
-
-  // Build OHLC sparkline from live data; fall back to deterministic mock
-  const sparkline = useMemo(() => {
-    if (quote?.open && quote?.high && quote?.low && quote?.current) {
-      const { open, high, low, current } = quote;
-      return [open, (open + high) / 2, high, (high + low) / 2, low, current];
-    }
-    // Use mock when quote is still loading or OHLC fields are missing
-    return mockSparkline(symbol, isPositive);
-  }, [quote, symbol, isPositive]);
 
   return (
     <button
       onClick={() => navigate(`/StockView?symbol=${symbol}`)}
       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl dark:hover:bg-white/[0.04] hover:bg-gray-50 transition-colors duration-150 text-left group"
     >
-      {/* Logo — real image via Parqet CDN, falls back to letter avatar */}
+      {/* Logo */}
       <StockLogo symbol={symbol} className="w-8 h-8 rounded-lg flex-shrink-0" />
 
       {/* Ticker */}
@@ -74,15 +38,8 @@ function WatchlistRow({ symbol }) {
         {symbol.split('.')[0]}
       </span>
 
-      {/* Sparkline — always rendered (mock if live unavailable) */}
-      <div className="flex-1 h-8 min-w-0">
-        <MiniSparkline
-          data={sparkline}
-          color={isLoading ? '#374151' : sparkColor}
-          height={32}
-          filled={false}
-        />
-      </div>
+      {/* Spacer */}
+      <div className="flex-1" />
 
       {/* Price + % change */}
       <div className="text-right flex-shrink-0 min-w-[60px]">
@@ -126,7 +83,7 @@ function RowSkeleton() {
     <div className="flex items-center gap-3 px-3 py-2.5 animate-pulse">
       <div className="w-8 h-8 rounded-lg dark:bg-white/[0.06] bg-gray-100 flex-shrink-0" />
       <div className="w-10 h-3 dark:bg-white/[0.06] bg-gray-200 rounded flex-shrink-0" />
-      <div className="flex-1 h-8 dark:bg-white/[0.03] bg-gray-50 rounded" />
+      <div className="flex-1" />
       <div className="flex-shrink-0 space-y-1.5 min-w-[60px]">
         <div className="h-3 w-14 dark:bg-white/[0.06] bg-gray-200 rounded ml-auto" />
         <div className="h-2.5 w-9 dark:bg-white/[0.04] bg-gray-100 rounded ml-auto" />
@@ -137,20 +94,21 @@ function RowSkeleton() {
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 function EmptyState({ onAdd }) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col items-center justify-center py-8 text-center px-4">
       <div className="w-10 h-10 rounded-xl dark:bg-white/[0.04] bg-gray-100 flex items-center justify-center mb-3">
         <BookmarkX className="w-4 h-4 dark:text-gray-600 text-gray-400" />
       </div>
-      <p className="text-xs font-medium dark:text-gray-400 text-gray-600 mb-1">No stocks yet</p>
+      <p className="text-xs font-medium dark:text-gray-400 text-gray-600 mb-1">{t('watchlist_no_stocks')}</p>
       <p className="text-[11px] dark:text-gray-600 text-gray-400 mb-4 leading-snug">
-        Save stocks from the Watchlist to track them here
+        {t('watchlist_no_stocks_desc')}
       </p>
       <button
         onClick={onAdd}
         className="text-[11px] font-semibold text-blue-400 hover:text-blue-300 transition-colors px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/15"
       >
-        Go to Watchlist
+        {t('watchlist_go')}
       </button>
     </div>
   );
@@ -159,6 +117,7 @@ function EmptyState({ onAdd }) {
 // ── Main sidebar ──────────────────────────────────────────────────────────────
 export default function WatchlistSidebar() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   // Source 1: flat favorites (user_watchlist table)
   const { symbols: favSymbols, loading: favLoading } = useWatchlist();
@@ -194,11 +153,11 @@ export default function WatchlistSidebar() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3.5 border-b dark:border-white/5 border-gray-100">
         <div>
-          <h2 className="text-sm font-semibold dark:text-white text-gray-900">My Watchlist</h2>
+          <h2 className="text-sm font-semibold dark:text-white text-gray-900">{t('watchlist_sidebar_title')}</h2>
           <p className="text-[11px] dark:text-gray-500 text-gray-400 mt-0.5">
             {loading
-              ? 'Loading…'
-              : `${allSymbols.length} stock${allSymbols.length !== 1 ? 's' : ''} tracked`}
+              ? t('loading')
+              : `${allSymbols.length} ${allSymbols.length !== 1 ? t('watchlist_stocks') : t('watchlist_stock')} ${t('watchlist_tracked')}`}
           </p>
         </div>
         <button
@@ -215,12 +174,10 @@ export default function WatchlistSidebar() {
         <div className="flex items-center gap-3 px-3 pt-2 pb-1">
           <div className="w-8 flex-shrink-0" />
           <div className="w-10 flex-shrink-0" />
-          <span className="flex-1 text-[9px] font-semibold uppercase tracking-widest dark:text-gray-700 text-gray-300 text-center">
-            5d trend
-          </span>
+          <div className="flex-1" />
           <div className="min-w-[60px] text-right">
             <span className="text-[9px] font-semibold uppercase tracking-widest dark:text-gray-700 text-gray-300">
-              Price
+              {t('watchlist_price_col')}
             </span>
           </div>
         </div>
@@ -250,7 +207,7 @@ export default function WatchlistSidebar() {
             onClick={() => navigate('/Watchlist')}
             className="w-full text-[11px] font-medium dark:text-gray-500 text-gray-400 dark:hover:text-gray-300 hover:text-gray-600 transition-colors text-center"
           >
-            View all {allSymbols.length} stocks →
+            {t('watchlist_view_all')} {allSymbols.length} {t('watchlist_stocks')} →
           </button>
         </div>
       )}

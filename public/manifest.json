@@ -2,23 +2,37 @@
   "name": "StockPulse AI",
   "short_name": "StockPulse",
   "description": "AI-powered stock opportunity scanner",
-  "start_url": "/Dashboard",
+  "start_url": "/Earnings",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
-  "orientation": "portrait-primary",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#0B1220",
+  "theme_color": "#0B1220",
+  "categories": ["finance", "business"],
   "icons": [
     {
-      "src": "https://base44.com/logo_v2.svg",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "https://base44.com/logo_v2.svg",
+      "src": "/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

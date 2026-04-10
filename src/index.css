@@ -4,39 +4,40 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    /* ── Light theme: #CBD3D6 page bg + #274690 navy-blue accent ───────────── */
+    --background: 196 12% 82%;         /* #CBD3D6  main page bg               */
+    --foreground: 225 39% 15%;         /* ~#1B264F dark navy text              */
+    --card: 0 0% 100%;                 /* #FFFFFF  card surface (brighter)     */
+    --card-foreground: 225 39% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
+    --popover-foreground: 225 39% 15%;
+    --primary: 222 57% 36%;            /* #274690  primary blue                */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 196 12% 88%;          /* slightly lighter than bg             */
+    --secondary-foreground: 222 39% 25%;
+    --muted: 196 12% 86%;
+    --muted-foreground: 215 16% 42%;   /* medium slate for secondary text      */
+    --accent: 224 32% 50%;             /* #576CA8  secondary blue              */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;          /* toned-down red                       */
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
+    --border: 196 12% 72%;             /* visible border on #CBD3D6 bg         */
+    --input: 0 0% 100%;                /* white inputs for contrast            */
+    --ring: 222 57% 36%;               /* primary blue focus ring              */
+    --chart-1: 222 57% 36%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 196 14% 86%; /* slightly lighter than page           */
+    --sidebar-foreground: 225 39% 20%;
+    --sidebar-primary: 222 57% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 196 12% 80%;
+    --sidebar-accent-foreground: 225 39% 20%;
+    --sidebar-border: 196 14% 70%;
+    --sidebar-ring: 222 57% 36%;
   }
 
   .dark {
@@ -83,10 +84,25 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  html {
+    height: 100%;
+    /* Prevent over-scroll bounce revealing the background in standalone mode */
+    overflow: hidden;
+  }
+
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
+    height: 100%;
+    /* Allow the app shell to scroll internally */
+    overflow: auto;
+  }
+
+  #root {
+    min-height: 100%;
+    /* Use dvh so the app fills the viewport correctly on mobile browsers */
+    min-height: 100dvh;
   }
 }
 
@@ -95,30 +111,109 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /* Premium accent utilities — use #4CBFF5 as the electric blue accent */
-  .gradient-primary {
+  /* Dark mode: electric blue accent (#4CBFF5) */
+  .dark .gradient-primary {
     background: linear-gradient(135deg, #3B82F6 0%, #4CBFF5 100%);
   }
-
-  .gradient-primary-hover:hover {
+  .dark .gradient-primary-hover:hover {
     background: linear-gradient(135deg, #2563EB 0%, #3BAEE0 100%);
     box-shadow: 0 0 20px rgba(76, 191, 245, 0.35);
   }
-
-  .glow-accent {
-    box-shadow: 0 0 18px rgba(76, 191, 245, 0.25);
+  .dark .glow-accent        { box-shadow: 0 0 18px rgba(76, 191, 245, 0.25); }
+  .dark .glow-accent-sm     { box-shadow: 0 0 10px rgba(76, 191, 245, 0.20); }
+  .dark .border-accent-subtle { border-color: rgba(76, 191, 245, 0.15); }
+  .dark .border-accent-glow {
+    border-color: rgba(76, 191, 245, 0.30);
+    box-shadow: 0 0 12px rgba(76, 191, 245, 0.10);
   }
 
-  .glow-accent-sm {
-    box-shadow: 0 0 10px rgba(76, 191, 245, 0.2);
+  /* Light mode: #274690 navy-blue accent */
+  .gradient-primary {
+    background: linear-gradient(135deg, #274690 0%, #576CA8 100%);
   }
-
-  .border-accent-subtle {
-    border-color: rgba(76, 191, 245, 0.15);
+  .gradient-primary-hover:hover {
+    background: linear-gradient(135deg, #1B264F 0%, #274690 100%);
+    box-shadow: 0 4px 20px rgba(39, 70, 144, 0.32);
   }
-
+  .glow-accent        { box-shadow: 0 0 18px rgba(39, 70, 144, 0.20); }
+  .glow-accent-sm     { box-shadow: 0 0 10px rgba(39, 70, 144, 0.15); }
+  .border-accent-subtle { border-color: rgba(39, 70, 144, 0.15); }
   .border-accent-glow {
-    border-color: rgba(76, 191, 245, 0.3);
-    box-shadow: 0 0 12px rgba(76, 191, 245, 0.1);
+    border-color: rgba(39, 70, 144, 0.25);
+    box-shadow: 0 0 12px rgba(39, 70, 144, 0.10);
+  }
+
+  /* Light mode card — white surface on #CBD3D6 page bg */
+  .light-card {
+    background-color: #FFFFFF;
+    border: 1px solid #B8C9D0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.06);
   }
 }
+
+/* ── Light mode: override hardcoded Tailwind gray/white classes ─────────────
+   Scoped to html:not(.dark) — zero impact on dark mode.
+────────────────────────────────────────────────────────────────────────────── */
+
+/* Page-level bg — for auth, landing, plans pages using bg-gray-50 */
+html:not(.dark) .bg-gray-50   { background-color: #D8E1E4; }
+/* Semi-transparent header backdrop */
+html:not(.dark) .bg-white\/90 { background-color: rgba(224, 231, 234, 0.92) !important; }
+/* Borders — darker so they show on #CBD3D6 */
+html:not(.dark) .border-gray-200 { border-color: #B0BBBF; }
+html:not(.dark) .border-gray-100 { border-color: #C2CDD2; }
+/* Hover states on white card surfaces */
+html:not(.dark) .hover\:bg-gray-100:hover { background-color: rgba(39, 70, 144, 0.05); }
+html:not(.dark) .hover\:bg-gray-200:hover { background-color: rgba(39, 70, 144, 0.09); }
+/* Sub-cards inside white surfaces */
+html:not(.dark) .bg-gray-50\/60 { background-color: #F0F5F7 !important; }
+
+/* ── White cards: clear shadow + border on #CBD3D6 bg ───────────────────────*/
+html:not(.dark) .bg-white.border.border-gray-200,
+html:not(.dark) .bg-white.border-gray-200 {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-color: #B8C9D0;
+}
+html:not(.dark) .rounded-2xl.bg-white {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Input / form fields ──────────────────────────────────────────────────── */
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select {
+  background-color: #FFFFFF;
+  border-color: #A8B9C1;
+}
+html:not(.dark) input:focus,
+html:not(.dark) textarea:focus {
+  border-color: #274690;
+  box-shadow: 0 0 0 3px rgba(39, 70, 144, 0.12);
+}
+
+/* ── Tabs polish ─────────────────────────────────────────────────────────── */
+html:not(.dark) [role="tablist"] {
+  background-color: #C4CDD0;
+}
+html:not(.dark) [role="tab"][data-state="active"] {
+  background-color: #FFFFFF;
+  color: #274690;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Sub-card surfaces inside white cards ─────────────────────────────────── */
+html:not(.dark) .bg-gray-50:not(body):not(html) {
+  background-color: #F0F5F7;
+}
+
+/* ── Softer danger/red surfaces in light mode ─────────────────────────────── */
+html:not(.dark) .bg-red-50 { background-color: #FEF6F6; }
+html:not(.dark) .border-red-200 { border-color: #F5C8C8; }
+html:not(.dark) .bg-red-50\/60 { background-color: rgba(254, 246, 246, 0.85) !important; }
+html:not(.dark) .border-red-200\/70 { border-color: rgba(245, 200, 200, 0.7) !important; }
+
+/* ── Softer status badge surfaces ─────────────────────────────────────────── */
+html:not(.dark) .bg-green-50 { background-color: #F2FAF4; }
+html:not(.dark) .border-green-200 { border-color: #BBDFC4; }
+html:not(.dark) .bg-amber-50 { background-color: #FEFAF0; }
+html:not(.dark) .border-amber-200 { border-color: #F5DFA0; }

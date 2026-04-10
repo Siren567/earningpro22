@@ -10,11 +10,12 @@
 import React from 'react';
 import { Lock, Bell, CalendarClock, TrendingUp, List, Newspaper, Mail } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { useLanguage } from '@/components/LanguageContext';
 
 // ── Coming Soon badge ──────────────────────────────────────────────────────────
 // Dominant, bright orange — the primary visual explanation for why it's locked.
 
-function ComingSoonBadge() {
+function ComingSoonBadge({ label }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex-shrink-0"
@@ -27,7 +28,7 @@ function ComingSoonBadge() {
       }}
     >
       <Lock className="w-2.5 h-2.5" />
-      Coming Soon
+      {label}
     </span>
   );
 }
@@ -136,7 +137,7 @@ function NotificationCard({ icon: Icon, title, description, tier = 'distant', ch
             </p>
           </div>
         </div>
-        <ComingSoonBadge />
+        <ComingSoonBadge label={t('lang_coming_soon')} />
       </div>
 
       {/* Preview controls — readable but subtly dimmed to reinforce locked state */}
@@ -153,134 +154,136 @@ function NotificationCard({ icon: Icon, title, description, tier = 'distant', ch
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function NotificationsSettings() {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-4">
 
       {/* ── Push Notifications — PRIMARY ──────────────────────────────────── */}
       <NotificationCard
         icon={Bell}
-        title="Push Notifications"
-        description="Real-time alerts delivered instantly to your device before key events."
+        title={t('notif_push_title')}
+        description={t('notif_push_desc')}
         tier="primary"
       >
         <PreviewRow
-          label="Enable push notifications"
-          sub="Receive alerts directly on this device"
+          label={t('notif_push_enable')}
+          sub={t('notif_push_enable_sub')}
           checked={false}
         />
         <Divider />
         <PreviewChips
-          label="Notification timing"
-          options={['15 min before', '1 hour before', 'At event time']}
-          active="1 hour before"
+          label={t('notif_timing_label')}
+          options={[t('notif_timing_15min_before'), t('notif_timing_1hr_before'), t('notif_timing_at_event')]}
+          active={t('notif_timing_1hr_before')}
         />
       </NotificationCard>
 
       {/* ── Earnings Alerts — SECONDARY ───────────────────────────────────── */}
       <NotificationCard
         icon={CalendarClock}
-        title="Earnings Alerts"
-        description="Stay ahead of earnings with pre-market and after-hours notifications."
+        title={t('notif_earnings_title')}
+        description={t('notif_earnings_desc')}
         tier="secondary"
       >
         <PreviewRow
-          label="Earnings reminders"
-          sub="Push alerts before scheduled earnings reports"
+          label={t('notif_earnings_remind')}
+          sub={t('notif_earnings_remind_sub')}
           checked={true}
         />
         <Divider />
         <PreviewRow
-          label="After-hours reports"
-          sub="Get notified for earnings released after market close"
+          label={t('notif_afterhours')}
+          sub={t('notif_afterhours_sub')}
           checked={true}
         />
         <Divider />
         <PreviewChips
-          label="Lead time"
-          options={['15 min', '1 hour', '1 day']}
-          active="1 hour"
+          label={t('notif_lead_time')}
+          options={[t('notif_timing_15min'), t('notif_timing_1hr'), t('notif_timing_1day')]}
+          active={t('notif_timing_1hr')}
         />
       </NotificationCard>
 
       {/* ── Remaining cards — DISTANT ─────────────────────────────────────── */}
       <NotificationCard
         icon={TrendingUp}
-        title="Price Movement Alerts"
-        description="Detect unusual price action and volatility before the market reacts."
+        title={t('notif_price_title')}
+        description={t('notif_price_desc')}
         tier="distant"
       >
         <PreviewRow
-          label="Unusual price moves"
-          sub="Alert when a stock moves beyond your set threshold"
+          label={t('notif_price_unusual')}
+          sub={t('notif_price_unusual_sub')}
           checked={true}
         />
         <Divider />
         <PreviewChips
-          label="Threshold"
-          options={['2%', '5%', '10%', 'Custom']}
+          label={t('notif_threshold')}
+          options={['2%', '5%', '10%', t('notif_custom')]}
           active="5%"
         />
       </NotificationCard>
 
       <NotificationCard
         icon={List}
-        title="Watchlist Alerts"
-        description="Track your selected symbols and get notified on key movements."
+        title={t('notif_watchlist_title')}
+        description={t('notif_watchlist_desc')}
         tier="distant"
       >
         <PreviewRow
-          label="Watchlist activity"
-          sub="Alerts for stocks across all your watchlists"
+          label={t('notif_watchlist_activity')}
+          sub={t('notif_watchlist_activity_sub')}
           checked={true}
         />
         <Divider />
         <PreviewChips
-          label="Alert scope"
-          options={['All symbols', 'Starred only', 'Custom list']}
-          active="All symbols"
+          label={t('notif_alert_scope')}
+          options={[t('notif_all_symbols'), t('notif_starred_only'), t('notif_custom_list')]}
+          active={t('notif_all_symbols')}
         />
       </NotificationCard>
 
       <NotificationCard
         icon={Newspaper}
-        title="News & Market Updates"
-        description="Receive major company news and market-moving events in real time."
+        title={t('notif_news_title')}
+        description={t('notif_news_desc')}
         tier="distant"
       >
         <PreviewRow
-          label="Breaking market news"
-          sub="High-impact macro or sector news"
+          label={t('notif_breaking_news')}
+          sub={t('notif_breaking_news_sub')}
           checked={false}
         />
         <Divider />
         <PreviewChips
-          label="Frequency"
-          options={['Real-time', 'Hourly digest', 'Daily digest']}
-          active="Daily digest"
+          label={t('notif_frequency')}
+          options={[t('notif_realtime'), t('notif_hourly_digest'), t('notif_daily_digest')]}
+          active={t('notif_daily_digest')}
         />
       </NotificationCard>
 
       <NotificationCard
         icon={Mail}
-        title="Email Notifications"
-        description="Control which updates are also delivered to your inbox."
+        title={t('notif_email_title')}
+        description={t('notif_email_desc')}
         tier="distant"
       >
         <PreviewRow
-          label="Weekly portfolio summary"
-          sub="A digest of key moves and upcoming events"
+          label={t('notif_email_weekly')}
+          sub={t('notif_email_weekly_sub')}
           checked={true}
         />
         <Divider />
         <PreviewRow
-          label="Earnings reports"
-          sub="Email copy of earnings alerts for tracked stocks"
+          label={t('notif_email_earnings')}
+          sub={t('notif_email_earnings_sub')}
           checked={false}
         />
       </NotificationCard>
 
       <p className="text-[11px] dark:text-gray-600 text-gray-400 text-center pb-1 pt-1">
-        Notification features are in active development and will roll out progressively.
+        {t('notif_dev_note')}
       </p>
     </div>
   );

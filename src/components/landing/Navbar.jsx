@@ -2,7 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Sun, Moon, Globe, TrendingUp, LogIn, Check, ChevronDown } from 'lucide-react';
+import { Sun, Moon, Globe, LogIn, Check, ChevronDown } from 'lucide-react';
+import AppLogo from '../app/AppLogo';
 import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
@@ -43,11 +44,9 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg gradient-primary glow-accent-sm flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
+            <AppLogo size="w-8 h-8 sm:w-9 sm:h-9" />
             <span className="text-base sm:text-lg font-bold dark:text-white text-gray-900 whitespace-nowrap">
-              StockPulse<span className="text-[#4CBFF5]">AI</span>
+              StockPulse<span className="dark:text-[#4CBFF5] text-[#576CA8]">AI</span>
             </span>
           </Link>
 
@@ -90,7 +89,7 @@ export default function Navbar() {
                           <div className="text-left">
                             <div>{language.name}</div>
                             {!language.enabled && (
-                              <div className="text-xs dark:text-gray-500 text-gray-500">Coming Soon</div>
+                              <div className="text-xs dark:text-gray-500 text-gray-500">{t('lang_coming_soon')}</div>
                             )}
                           </div>
                         </div>

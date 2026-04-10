@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { getFmpProfile } from '@/api/fmpApi';
 import { useWatchlist } from '../components/hooks/useWatchlist';
 import {
-  searchStocks       as yahooSearchStocks,
-  getStockData       as yahooGetStockData,
-  getStockQuote      as yahooGetStockQuote,
+  getStockQuote        as yahooGetStockQuote,
   getStockFundamentals as yahooGetFundamentals,
 } from '@/api/yahooFinanceApi';
+import {
+  getCachedStockData as yahooGetStockData,
+  searchWithCache    as yahooSearchStocks,
+} from '@/lib/stocksCache';
 import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '../components/LanguageContext';
 import { useMarketDataRefresh } from '../components/hooks/useMarketDataRefresh';
@@ -25,6 +28,7 @@ import KeyMetricsGrid from '../components/stock/KeyMetricsGrid';
 import CompanyOverview from '../components/stock/CompanyOverview';
 import LeverageTag, { detectLeverage } from '../components/stock/LeverageTag.jsx';
 import StockErrorBoundary from '../components/stock/StockErrorBoundary';
+import WyckoffAnalysisCard from '../components/stock/WyckoffAnalysisCard';
 
 const PriceFlash = ({ isVisible, type }) => {
   if (!isVisible) return null;
@@ -463,8 +467,16 @@ export default function StockView() {
         console.log('[KeyMetrics] Received for', normalizedSymbol, metricsObject);
         return metricsObject;
       } catch (err) {
-        console.error('[KeyMetrics] Error:', err.message);
-        return null;
+        console.warn('[KeyMetrics] Base44 failed, trying FMP directly:', err.message);
+        // Base44 backend unavailable — fetch the three fields we need from FMP directly
+        try {
+          const fmp = await getFmpProfile(normalizedSymbol);
+          if (fmp) console.log('[KeyMetrics] FMP fallback succeeded for', normalizedSymbol, fmp);
+          return fmp; // { marketCap, sharesOutstanding, floatShares } or null
+        } catch (fmpErr) {
+          console.error('[KeyMetrics] FMP fallback also failed:', fmpErr.message);
+          return null;
+        }
       }
     },
     enabled: !!normalizedSymbol,
@@ -716,25 +728,6 @@ export default function StockView() {
     } catch { return null; }
   })();
 
-  // Mock user subscription - replace with actual user data
-  const [userProfile, setUserProfile] = useState(null);
-  
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const user = await base44.auth.me();
-        if (user) {
-          const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
-          setUserProfile(profiles[0] || null);
-        }
-      } catch (err) {
-        console.log('User not logged in');
-      }
-    };
-    fetchProfile();
-  }, []);
-
-  const isPremiumUser = userProfile?.subscription_plan === 'pro' || userProfile?.subscription_plan === 'enterprise';
 
   const getAISetupLevel = (score) => {
     if (score >= 75) return { level: 'High Opportunity', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
@@ -750,7 +743,7 @@ export default function StockView() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold dark:text-white text-gray-900 mb-2">{t('stock_view_title')}</h1>
-        <p className="text-sm dark:text-gray-500 text-gray-500">AI-powered stock analysis and earnings insights</p>
+        <p className="text-sm dark:text-gray-500 text-gray-500">{t('stock_ai_subtitle')}</p>
       </div>
 
       {/* Search */}
@@ -771,7 +764,7 @@ export default function StockView() {
             setShowDropdown(true);
           }}
           onFocus={() => { if (debouncedQuery.length >= 1) setShowDropdown(true); }}
-          placeholder="Search symbol or company (e.g. AAPL, Tesla)"
+          placeholder={t('search_placeholder_long')}
           className="pl-10 pr-10 dark:bg-white/5 dark:border-white/10 dark:text-white rounded-xl h-12 text-base"
           autoComplete="off"
           autoCorrect="off"
@@ -793,14 +786,14 @@ export default function StockView() {
         <div className="flex items-center justify-center h-96 rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-200">
           <div className="text-center">
             <Search className="w-12 h-12 dark:text-gray-700 text-gray-300 mx-auto mb-3" />
-            <p className="dark:text-gray-500 text-gray-500">Search for a stock to view detailed analysis</p>
+            <p className="dark:text-gray-500 text-gray-500">{t('stock_empty_search')}</p>
           </div>
         </div>
       ) : (isLoadingData && !profile && !quote) ? (
         <div className="flex items-center justify-center h-96 rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-200">
           <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
         </div>
-      ) : (!profile && !quote && !loadingProfile && !loadingQuote) ? (
+      ) : (!finalStock && !quote && !loadingProfile && !loadingQuote) ? (
         <div className="flex items-center justify-center h-96 rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-200">
           <div className="text-center">
             <AlertCircle className="w-12 h-12 dark:text-gray-700 text-gray-300 mx-auto mb-3" />
@@ -895,17 +888,7 @@ export default function StockView() {
                         className="w-[72px] h-[72px]"
                       />
                     )}
-                    {normalizedSymbol && (
-                      <button
-                        onClick={() => window.location.href = `/gecko/analyze?ticker=${normalizedSymbol}`}
-                        className="flex items-center gap-2 px-4 py-1.5 rounded-xl border dark:border-white/[0.10] border-gray-200 dark:bg-white/[0.05] bg-white hover:dark:bg-white/[0.09] hover:bg-gray-50 dark:hover:border-white/[0.18] hover:border-gray-300 dark:hover:shadow-[0_2px_16px_rgba(0,0,0,0.35)] transition-all duration-150"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 dark:text-white/70 text-gray-500 flex-shrink-0" />
-                        <span className="text-sm font-semibold dark:text-white/90 text-gray-800 whitespace-nowrap">
-                          Analyze with Gecko
-                        </span>
-                      </button>
-                    )}
+                    {/* TODO: Hidden until ready — "Analyze with Gecko" button → /gecko/analyze */}
                   </div>
                 </div>
 
@@ -1051,7 +1034,7 @@ export default function StockView() {
           {selectedStock && (
             <div className="rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-200 overflow-hidden shadow-lg">
               <div className="p-4 md:p-8 pb-4 md:pb-6 border-b dark:border-white/5 border-gray-200">
-                <h3 className="text-lg font-bold dark:text-white text-gray-900">Price Chart</h3>
+                <h3 className="text-lg font-bold dark:text-white text-gray-900">{t('price_chart')}</h3>
               </div>
               <div className="p-2 md:p-8">
                 <div style={{ height: '400px' }} className="md:!h-[700px]" key={normalizedSymbol}>
@@ -1077,6 +1060,16 @@ export default function StockView() {
                   ))}
                 </div>
               </div>
+
+              {/* Wyckoff AI Analysis — directly below chart/timeframe controls */}
+              {normalizedSymbol && (
+                <div className="border-t dark:border-white/5 border-gray-200 px-4 md:px-8 py-4 md:py-6">
+                  <WyckoffAnalysisCard
+                    symbol={normalizedSymbol}
+                    companyName={finalStock?.longName ?? finalStock?.shortName ?? normalizedSymbol}
+                  />
+                </div>
+              )}
             </div>
           )}
 

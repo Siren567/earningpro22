@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { fetchWatchlist, addToWatchlist, removeFromWatchlist } from '../../lib/watchlist';
+import { getPlanLimits, getEffectivePlan } from '../../lib/planConfig';
 
 const LS_KEY = 'watchlist_items';
 
@@ -14,11 +15,16 @@ const LS_KEY = 'watchlist_items';
  *   toggle    (symbol, assetType?) => Promise<void>  — add if absent, remove if present
  */
 export function useWatchlist() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [items, setItems] = useState([]); // [{ symbol, asset_type }]
   const [loading, setLoading] = useState(false);
 
   const symbols = items.map(i => i.symbol);
+
+  // Plan limits
+  const plan           = getEffectivePlan(profile?.subscription_plan);
+  const watchlistLimit = getPlanLimits(plan).watchlistLimit;
+  const isAtLimit      = symbols.length >= watchlistLimit;
 
   // Load watchlist when user changes
   useEffect(() => {
@@ -61,6 +67,11 @@ export function useWatchlist() {
   const toggle = useCallback(async (symbol, assetType = 'stock') => {
     const wasIn = symbols.includes(symbol);
 
+    // Plan gate: block additions when at limit
+    if (!wasIn && symbols.length >= watchlistLimit) {
+      return 'LIMIT_REACHED';
+    }
+
     if (!user) {
       // Guest path — localStorage only
       setItems(prev => {
@@ -85,13 +96,15 @@ export function useWatchlist() {
       }
     } catch (err) {
       console.warn('[useWatchlist] toggle failed, reverting:', err.message);
-      // Revert
       setItems(prev => wasIn
         ? [{ symbol, asset_type: assetType }, ...prev]
         : prev.filter(i => i.symbol !== symbol)
       );
     }
-  }, [user, symbols]);
+  }, [user, symbols, watchlistLimit]);
 
-  return { items, symbols, loading, isSaved, toggle };
+  return {
+    items, symbols, loading, isSaved, toggle,
+    watchlistLimit, isAtLimit, plan,
+  };
 }

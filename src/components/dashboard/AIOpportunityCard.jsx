@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Info, ExternalLink, Zap, Radio } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import GeckoIcon from '../icons/GeckoIcon';
+import { useLanguage } from '../LanguageContext';
 
 // ── Shared visual constants ───────────────────────────────────────────────────
 // All three Gecko cards share one calm accent palette.
@@ -12,6 +13,7 @@ const BAR_BG      = 'linear-gradient(90deg, #38bdf8 0%, #818cf8 100%)';
 // ── Gecko Insight popover ─────────────────────────────────────────────────────
 function InsightPopover({ reasons }) {
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <div className="relative">
@@ -20,7 +22,7 @@ function InsightPopover({ reasons }) {
         onMouseLeave={() => setOpen(false)}
         onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
         className="p-1 rounded-md dark:text-gray-600 text-gray-400 dark:hover:text-gray-400 hover:text-gray-500 transition-colors duration-150"
-        aria-label="Gecko Insight"
+        aria-label={t('gecko_insight')}
       >
         <Info className="w-3.5 h-3.5" />
       </button>
@@ -32,7 +34,7 @@ function InsightPopover({ reasons }) {
             <div className="flex items-center gap-1.5 mb-3">
               <GeckoIcon className="w-3 h-3 dark:text-gray-500 text-gray-400" />
               <p className="text-[9px] font-bold uppercase tracking-widest dark:text-gray-500 text-gray-400">
-                Gecko Insight
+                {t('gecko_insight')}
               </p>
             </div>
             <ul className="space-y-2">
@@ -71,7 +73,16 @@ export default function AIOpportunityCard({
   timeframe,
 }) {
   const navigate  = useNavigate();
+  const { t, isRTL } = useLanguage();
   const [hovered, setHovered] = useState(false);
+
+  const confidenceMap = {
+    'Very High': t('confidence_very_high'),
+    'High':      t('confidence_high'),
+    'Moderate':  t('confidence_moderate'),
+    'Low':       t('confidence_low'),
+  };
+  const confText = confidenceMap[confidence] ?? confidence;
 
   return (
     <div
@@ -112,7 +123,7 @@ export default function AIOpportunityCard({
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[10px] font-medium uppercase tracking-wider dark:text-gray-600 text-gray-400 flex items-center gap-1">
             <GeckoIcon className="w-3 h-3" />
-            Gecko Score
+            {t('gecko_score')}
           </span>
           <span className="text-lg font-bold dark:text-white text-gray-900 tabular-nums leading-none">
             {geckoScore}
@@ -137,10 +148,10 @@ export default function AIOpportunityCard({
       {/* Row 5: confidence + view */}
       <div className="relative flex items-center justify-between">
         <span className="text-[11px] dark:text-gray-600 text-gray-400">
-          {confidence} confidence
+          {isRTL ? `${t('confidence_label')} ${confText}` : `${confText} ${t('confidence_label')}`}
         </span>
         <div className="flex items-center gap-1 text-[11px] dark:text-gray-600 text-gray-400 dark:group-hover:text-gray-400 group-hover:text-gray-500 transition-colors">
-          View <ExternalLink className="w-3 h-3" />
+          {t('view_label')} <ExternalLink className="w-3 h-3" />
         </div>
       </div>
     </div>

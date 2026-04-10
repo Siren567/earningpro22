@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../components/auth/AuthContext';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useLanguage } from '../components/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, Check, X, ArrowLeft, Eye, EyeOff, Wand2 } from 'lucide-react';
+import AppLogo from '../components/app/AppLogo';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 import SuspensionModal from '../components/auth/SuspensionModal';
 import { generateStrongPassword } from '@/lib/passwordUtils';
@@ -36,6 +38,7 @@ export default function Auth() {
   
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const accountConfirmed = searchParams.get('confirmed') === 'true';
 
@@ -83,25 +86,25 @@ export default function Auth() {
     if (/[0-9]/.test(pwd)) score += 15;
     if (/[!@#$%^&*]/.test(pwd)) score += 15;
     
-    let label = 'Very Weak';
+    let label = t('auth_pwd_very_weak');
     let color = 'bg-red-500';
-    
+
     if (score >= 80) {
-      label = 'Very Strong';
+      label = t('auth_pwd_very_strong');
       color = 'bg-blue-500';
     } else if (score >= 60) {
-      label = 'Strong';
+      label = t('auth_pwd_strong');
       color = 'bg-blue-500';
     } else if (score >= 40) {
-      label = 'Medium';
+      label = t('auth_pwd_medium');
       color = 'bg-yellow-500';
     } else if (score >= 20) {
-      label = 'Weak';
+      label = t('auth_pwd_weak');
       color = 'bg-orange-500';
     }
     
     return { score, label, color };
-  }, [formData.password]);
+  }, [formData.password, t]);
 
   // Password validation
   const validatePassword = (password) => {
@@ -194,13 +197,13 @@ export default function Auth() {
         <Link to="/Landing">
           <Button variant="ghost" className="mb-4 gap-2 dark:text-gray-400 text-gray-600">
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            {t('auth_back_home')}
           </Button>
         </Link>
 
         {accountConfirmed && (
           <div className="mb-4 px-4 py-3 rounded-xl bg-[#4CBFF5]/10 border border-[#4CBFF5]/25 text-sm text-[#4CBFF5] text-center">
-            Your account is confirmed — please log in.
+            {t('auth_account_confirmed')}
           </div>
         )}
 
@@ -209,27 +212,30 @@ export default function Auth() {
             <div className="w-14 h-14 rounded-full bg-[#4CBFF5]/10 border border-[#4CBFF5]/20 flex items-center justify-center mx-auto mb-4">
               <Check className="w-7 h-7 text-[#4CBFF5]" />
             </div>
-            <h2 className="text-xl font-bold dark:text-white text-gray-900 mb-2">Check your email</h2>
+            <h2 className="text-xl font-bold dark:text-white text-gray-900 mb-2">{t('auth_check_email')}</h2>
             <p className="text-sm dark:text-gray-400 text-gray-600 mb-6">
-              We sent a confirmation link to <span className="text-[#4CBFF5] font-medium">{formData.email}</span>.
-              Click the link to activate your account, then come back to log in.
+              {t('auth_check_email_desc')} <span className="text-[#4CBFF5] font-medium">{formData.email}</span>.{' '}
+              {t('auth_activate')}
             </p>
             <Button
               onClick={() => { setEmailConfirmationSent(false); setMode('login'); }}
               className="w-full gradient-primary border-0 text-white"
             >
-              Back to Login
+              {t('auth_back_login')}
             </Button>
           </div>
         ) : (
 
         <div className="dark:bg-[#1a1a2e] bg-white rounded-2xl shadow-xl border dark:border-white/10 border-gray-200 p-8">
           <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <AppLogo size="w-14 h-14" />
+            </div>
             <h1 className="text-3xl font-bold dark:text-white text-gray-900 mb-2">
               StockPulse AI
             </h1>
             <p className="text-sm dark:text-gray-400 text-gray-600">
-              {mode === 'login' ? 'Welcome back' : 'Create your account'}
+              {mode === 'login' ? t('auth_welcome') : t('auth_create_account')}
             </p>
           </div>
 
@@ -237,7 +243,7 @@ export default function Auth() {
             {mode === 'register' && (
               <>
                 <div>
-                  <Label htmlFor="first_name" className="dark:text-gray-300">First Name</Label>
+                  <Label htmlFor="first_name" className="dark:text-gray-300">{t('auth_first_name')}</Label>
                   <Input
                     id="first_name"
                     type="text"
@@ -248,7 +254,7 @@ export default function Auth() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="last_name" className="dark:text-gray-300">Last Name</Label>
+                  <Label htmlFor="last_name" className="dark:text-gray-300">{t('auth_last_name')}</Label>
                   <Input
                     id="last_name"
                     type="text"
@@ -259,7 +265,7 @@ export default function Auth() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="birth_date" className="dark:text-gray-300">Birth Date</Label>
+                  <Label htmlFor="birth_date" className="dark:text-gray-300">{t('auth_birth_date')}</Label>
                   <Input
                     id="birth_date"
                     type="text"
@@ -274,7 +280,7 @@ export default function Auth() {
             )}
 
             <div>
-              <Label htmlFor="email" className="dark:text-gray-300">Email</Label>
+              <Label htmlFor="email" className="dark:text-gray-300">{t('email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -287,7 +293,7 @@ export default function Auth() {
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <Label htmlFor="password" className="dark:text-gray-300">Password</Label>
+                <Label htmlFor="password" className="dark:text-gray-300">{t('password')}</Label>
                 {mode === 'register' && (
                   <button
                     type="button"
@@ -295,7 +301,7 @@ export default function Auth() {
                     className="flex items-center gap-1 text-xs text-[#4CBFF5] hover:text-blue-400 transition-colors"
                   >
                     <Wand2 className="w-3 h-3" />
-                    Generate password
+                    {t('auth_generate_password')}
                   </button>
                 )}
               </div>
@@ -330,7 +336,7 @@ export default function Auth() {
                       className="w-4 h-4 rounded border-gray-300 dark:border-white/10 text-blue-600 focus:ring-blue-500 dark:bg-white/5"
                     />
                     <Label htmlFor="rememberMe" className="dark:text-gray-300 text-sm cursor-pointer">
-                      Remember Me
+                      {t('auth_remember_me')}
                     </Label>
                   </div>
                   <button
@@ -338,7 +344,7 @@ export default function Auth() {
                     onClick={() => setShowForgotPassword(true)}
                     className="text-sm text-blue-500 hover:text-cyan-400 transition-colors"
                   >
-                    Forgot Password?
+                    {t('auth_forgot_password')}
                   </button>
                 </div>
               )}
@@ -357,39 +363,39 @@ export default function Auth() {
                   </div>
                   <div className="space-y-0.5 text-xs dark:text-gray-500 text-gray-600">
                     <div className="flex items-center gap-1">
-                      {formData.password.length >= 8 ? 
-                        <Check className="w-3 h-3 text-blue-500" /> : 
+                      {formData.password.length >= 8 ?
+                        <Check className="w-3 h-3 text-blue-500" /> :
                         <X className="w-3 h-3 text-red-500" />
                       }
-                      <span>At least 8 characters</span>
+                      <span>{t('auth_pwd_req_length')}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {/[A-Z]/.test(formData.password) ? 
-                        <Check className="w-3 h-3 text-blue-500" /> : 
+                      {/[A-Z]/.test(formData.password) ?
+                        <Check className="w-3 h-3 text-blue-500" /> :
                         <X className="w-3 h-3 text-red-500" />
                       }
-                      <span>At least 1 uppercase letter</span>
+                      <span>{t('auth_pwd_req_upper')}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {/[a-z]/.test(formData.password) ? 
-                        <Check className="w-3 h-3 text-blue-500" /> : 
+                      {/[a-z]/.test(formData.password) ?
+                        <Check className="w-3 h-3 text-blue-500" /> :
                         <X className="w-3 h-3 text-red-500" />
                       }
-                      <span>At least 1 lowercase letter</span>
+                      <span>{t('auth_pwd_req_lower')}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {/[0-9]/.test(formData.password) ? 
-                        <Check className="w-3 h-3 text-blue-500" /> : 
+                      {/[0-9]/.test(formData.password) ?
+                        <Check className="w-3 h-3 text-blue-500" /> :
                         <X className="w-3 h-3 text-red-500" />
                       }
-                      <span>At least 1 number</span>
+                      <span>{t('auth_pwd_req_number')}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {/[!@#$%^&*]/.test(formData.password) ? 
-                        <Check className="w-3 h-3 text-blue-500" /> : 
+                      {/[!@#$%^&*]/.test(formData.password) ?
+                        <Check className="w-3 h-3 text-blue-500" /> :
                         <X className="w-3 h-3 text-red-500" />
                       }
-                      <span>At least 1 special character (!@#$%^&*)</span>
+                      <span>{t('auth_pwd_req_special')}</span>
                     </div>
                   </div>
                 </div>
@@ -398,7 +404,7 @@ export default function Auth() {
 
             {mode === 'register' && (
               <div>
-                <Label htmlFor="confirmPassword" className="dark:text-gray-300 mb-1 block">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="dark:text-gray-300 mb-1 block">{t('settings_confirm_password')}</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -421,9 +427,9 @@ export default function Auth() {
                 {formData.confirmPassword && (
                   <div className="mt-1 flex items-center gap-1 text-xs">
                     {formData.password === formData.confirmPassword ? (
-                      <><Check className="w-3 h-3 text-blue-500" /><span className="text-blue-500">Passwords match</span></>
+                      <><Check className="w-3 h-3 text-blue-500" /><span className="text-blue-500">{t('auth_passwords_match')}</span></>
                     ) : (
-                      <><X className="w-3 h-3 text-red-500" /><span className="text-red-500">Passwords do not match</span></>
+                      <><X className="w-3 h-3 text-red-500" /><span className="text-red-500">{t('auth_passwords_no_match')}</span></>
                     )}
                   </div>
                 )}
@@ -441,7 +447,7 @@ export default function Auth() {
                     className="w-4 h-4 mt-0.5 rounded border-gray-300 dark:border-white/10 text-blue-600 focus:ring-blue-500 dark:bg-white/5"
                   />
                   <Label htmlFor="agreeToTerms" className="dark:text-gray-300 text-sm cursor-pointer">
-                    I agree to the{' '}
+                    {t('auth_agree_terms')}{' '}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -450,9 +456,9 @@ export default function Auth() {
                       }}
                       className="text-blue-500 hover:text-cyan-400 underline"
                     >
-                      Terms of Service
+                      {t('footer_terms')}
                     </button>
-                    {' '}and{' '}
+                    {' '}{t('auth_and')}{' '}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -461,12 +467,12 @@ export default function Auth() {
                       }}
                       className="text-blue-500 hover:text-cyan-400 underline"
                     >
-                      Privacy Policy
+                      {t('footer_privacy')}
                     </button>
                   </Label>
                 </div>
                 <p className="text-xs dark:text-gray-500 text-gray-600 pl-6">
-                  By creating an account, you acknowledge that this platform does not provide financial advice and is intended for informational and educational purposes only.
+                  {t('auth_disclaimer_notice')}
                 </p>
               </div>
             )}
@@ -483,9 +489,9 @@ export default function Auth() {
               disabled={loading}
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Processing...</>
+                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t('auth_processing')}</>
               ) : (
-                mode === 'login' ? 'Login' : 'Register'
+                mode === 'login' ? t('auth_login') : t('auth_register')
               )}
             </Button>
           </form>
@@ -498,9 +504,7 @@ export default function Auth() {
               }}
               className="text-sm dark:text-cyan-400 text-blue-600 hover:underline"
             >
-              {mode === 'login' 
-                ? "Don't have an account? Sign up" 
-                : 'Already have an account? Login'}
+              {mode === 'login' ? t('auth_no_account') : t('auth_has_account')}
             </button>
           </div>
         </div>
@@ -511,7 +515,7 @@ export default function Auth() {
       <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Terms of Service</DialogTitle>
+            <DialogTitle>{t('footer_terms')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 mt-4 text-sm dark:text-gray-300 text-gray-700">
             <p className="text-xs dark:text-gray-400 text-gray-600">Last updated: 2026</p>
@@ -602,7 +606,7 @@ export default function Auth() {
       <Dialog open={showPrivacyModal} onOpenChange={setShowPrivacyModal}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Privacy Policy</DialogTitle>
+            <DialogTitle>{t('footer_privacy')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 mt-4 text-sm dark:text-gray-300 text-gray-700">
             <p className="text-xs dark:text-gray-400 text-gray-600">Last updated: 2026</p>

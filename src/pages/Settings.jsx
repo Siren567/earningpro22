@@ -7,7 +7,16 @@ import { useTheme } from '../components/ThemeContext';
 import { useLogout } from '../components/auth/useLogout';
 import { useAuth } from '../components/auth/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { User, Shield, CreditCard, Globe, Sun, Moon, Upload, Save, LogOut, AlertCircle, Wand2, Bell } from 'lucide-react';
+import { Shield, CreditCard, Globe, Sun, Moon, Save, LogOut, AlertCircle, Wand2, Bell, User } from 'lucide-react';
+
+function getInitials(first, last) {
+  const f = (first || '').trim();
+  const l = (last  || '').trim();
+  if (f && l) return (f[0] + l[0]).toUpperCase();
+  if (f)      return f[0].toUpperCase();
+  if (l)      return l[0].toUpperCase();
+  return 'U';
+}
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -109,20 +118,12 @@ export default function Settings() {
     }
   };
 
-  // Legacy mutation kept for avatar upload (still uses base44 if available)
   const updateProfile = useMutation({
     mutationFn: (data) => base44.entities.UserProfile.update(profile?.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settingsProfile'] });
     },
   });
-
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    updateProfile.mutate({ avatar_url: file_url });
-  };
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -195,34 +196,37 @@ export default function Settings() {
             <Globe className="w-4 h-4" /> {t('settings_preferences')}
           </TabsTrigger>
           <TabsTrigger value="notifications" className="rounded-lg gap-1.5 data-[state=active]:dark:bg-white/10 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <Bell className="w-4 h-4" /> Notifications
+            <Bell className="w-4 h-4" /> {t('settings_notifications_tab')}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-6 space-y-6">
           <div className="p-6 rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-200">
-            {/* Avatar */}
+            {/* Avatar — initials-based, updates live as name is edited */}
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center overflow-hidden">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-8 h-8 text-blue-500" />
-                )}
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)' }}
+              >
+                <span className="text-xl font-bold text-white leading-none select-none">
+                  {getInitials(form.first_name, form.last_name)}
+                </span>
               </div>
               <div>
-                <label className="cursor-pointer">
-                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                  <span className="text-sm font-medium text-blue-500 hover:text-cyan-400 transition-colors">
-                    {t('settings_upload_avatar')}
-                  </span>
-                </label>
+                <p className="text-sm font-medium dark:text-white text-gray-900">
+                  {form.first_name || form.last_name
+                    ? `${form.first_name} ${form.last_name}`.trim()
+                    : t('settings_your_name')}
+                </p>
+                <p className="text-xs dark:text-gray-500 text-gray-400 mt-0.5">
+                  {user?.email || ''}
+                </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs dark:text-gray-500 text-gray-500 mb-1 block">{t('name')}</label>
+                <label className="text-xs dark:text-gray-500 text-gray-500 mb-1 block">{t('auth_first_name')}</label>
                 <Input
                   value={form.first_name || ''}
                   onChange={(e) => setForm({ ...form, first_name: e.target.value })}
@@ -230,7 +234,7 @@ export default function Settings() {
                 />
               </div>
               <div>
-                <label className="text-xs dark:text-gray-500 text-gray-500 mb-1 block">Last Name</label>
+                <label className="text-xs dark:text-gray-500 text-gray-500 mb-1 block">{t('settings_last_name')}</label>
                 <Input
                   value={form.last_name || ''}
                   onChange={(e) => setForm({ ...form, last_name: e.target.value })}
@@ -246,7 +250,7 @@ export default function Settings() {
                 />
               </div>
               <div>
-                <label className="text-xs dark:text-gray-500 text-gray-500 mb-1 block">Member Since</label>
+                <label className="text-xs dark:text-gray-500 text-gray-500 mb-1 block">{t('settings_member_since')}</label>
                 <Input
                   value={(() => {
                     const raw = user?.created_at || profile?.created_date;
@@ -266,16 +270,15 @@ export default function Settings() {
                   
                   <div className="space-y-3">
                     <div>
-                      <p className="text-xs dark:text-gray-500 text-gray-500 mb-1">Plan</p>
+                      <p className="text-xs dark:text-gray-500 text-gray-500 mb-1">{t('settings_plan_label')}</p>
                       <p className="text-sm font-semibold dark:text-white text-gray-900">
-                        {profile?.subscription_plan === 'free' ? 'Free' : profile?.subscription_plan === 'premium' ? 'Premium' : 'Free'}
+                        {profile?.subscription_plan === 'free' ? t('plans_free') : profile?.subscription_plan === 'premium' ? t('plans_premium') : t('plans_free')}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs dark:text-gray-500 text-gray-500 mb-1.5">Status</p>
+                      <p className="text-xs dark:text-gray-500 text-gray-500 mb-1.5">{t('settings_status')}</p>
                       {(() => {
-                        // Treat null / undefined / 'free' (any case) as the Free plan
                         const plan = profile?.subscription_plan;
                         const isFree = !plan || plan.toLowerCase() === 'free';
 
@@ -283,20 +286,19 @@ export default function Settings() {
                           return (
                             <div>
                               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-blue-500/10 text-blue-500 border-blue-500/20">
-                                Free Plan
+                                {t('settings_free_plan')}
                               </div>
                               <p className="text-[11px] dark:text-gray-500 text-gray-400 mt-1.5">
-                                You are currently on the free plan
+                                {t('settings_on_free')}
                               </p>
                             </div>
                           );
                         }
 
-                        // Paid plan — requires a valid expiry date to show anything meaningful
                         if (!profile?.subscription_expiry) {
                           return (
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-blue-500/10 text-blue-500 border-blue-500/20">
-                              Active
+                              {t('settings_active')}
                             </div>
                           );
                         }
@@ -310,19 +312,19 @@ export default function Settings() {
                         let icon = null;
 
                         if (daysLeft < 0) {
-                          status = 'Expired';
+                          status = t('settings_expired');
                           badgeColor = 'bg-red-500/10 text-red-500 border-red-500/20';
                           icon = <AlertCircle className="w-3 h-3" />;
                         } else if (daysLeft < 3) {
-                          status = `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`;
+                          status = `${t('settings_expires_in')} ${daysLeft} ${daysLeft !== 1 ? t('status_days') : t('status_day')}`;
                           badgeColor = 'bg-red-500/10 text-red-500 border-red-500/20';
                           icon = <AlertCircle className="w-3 h-3" />;
                         } else if (daysLeft < 14) {
-                          status = `Expires in ${daysLeft} days`;
+                          status = `${t('settings_expires_in')} ${daysLeft} ${t('status_days')}`;
                           badgeColor = 'bg-orange-500/10 text-orange-500 border-orange-500/20';
                           icon = <AlertCircle className="w-3 h-3" />;
                         } else {
-                          status = `Active — ${daysLeft} days remaining`;
+                          status = `${t('settings_active_days')} ${daysLeft} ${t('settings_days_remaining')}`;
                           badgeColor = 'bg-blue-500/10 text-blue-500 border-blue-500/20';
                         }
 
@@ -341,7 +343,7 @@ export default function Settings() {
                       if (!isPaid || !profile?.subscription_expiry) return null;
                       return (
                         <div>
-                          <p className="text-xs dark:text-gray-500 text-gray-500 mb-1">Renewal / Expiry</p>
+                          <p className="text-xs dark:text-gray-500 text-gray-500 mb-1">{t('settings_renewal')}</p>
                           <p className="text-sm dark:text-gray-300 text-gray-700">
                             {format(new Date(profile.subscription_expiry), 'MMM d, yyyy')}
                           </p>
@@ -355,7 +357,7 @@ export default function Settings() {
               {profile?.subscription_plan === 'free' && (
                 <Link to="/Plans" className="block mt-4">
                   <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
-                    Upgrade Plan
+                    {t('settings_upgrade_plan')}
                   </Button>
                 </Link>
               )}
@@ -367,7 +369,7 @@ export default function Settings() {
               className="mt-6 bg-blue-500 hover:bg-blue-600 text-white gap-1.5"
             >
               <Save className="w-4 h-4" />
-              {isSaving ? 'Saving…' : t('save')}
+              {isSaving ? t('settings_saving') : t('save')}
             </Button>
           </div>
         </TabsContent>
@@ -375,31 +377,31 @@ export default function Settings() {
         <TabsContent value="security" className="mt-6 space-y-4">
           <div className="p-6 rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-200 space-y-4">
             <div>
-              <p className="text-sm font-medium dark:text-white text-gray-900 mb-4">Change Password</p>
+              <p className="text-sm font-medium dark:text-white text-gray-900 mb-4">{t('settings_change_password_title')}</p>
               <form onSubmit={handlePasswordChange} className="space-y-4">
                 <PasswordInput
-                  label="Current Password"
+                  label={t('settings_current_password')}
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  placeholder="Enter your current password"
+                  placeholder={t('settings_current_password')}
                 />
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs dark:text-gray-500 text-gray-500">New Password</label>
+                    <label className="text-xs dark:text-gray-500 text-gray-500">{t('settings_new_password')}</label>
                     <button
                       type="button"
                       onClick={generatePassword}
                       className="text-xs text-blue-500 hover:text-cyan-400 font-medium flex items-center gap-1 transition-colors"
                     >
-                      <Wand2 className="w-3 h-3" /> Generate
+                      <Wand2 className="w-3 h-3" /> {t('settings_generate')}
                     </button>
                   </div>
                   <PasswordInput
                     label=""
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                    placeholder="Enter new password"
+                    placeholder={t('settings_new_password')}
                   />
                   <div className="mt-3">
                     <PasswordStrengthIndicator password={passwordForm.newPassword} />
@@ -407,10 +409,10 @@ export default function Settings() {
                 </div>
 
                 <PasswordInput
-                  label="Confirm New Password"
+                  label={t('settings_confirm_password')}
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  placeholder="Confirm new password"
+                  placeholder={t('settings_confirm_password')}
                 />
 
                 {passwordError && (
@@ -430,13 +432,13 @@ export default function Settings() {
                   disabled={passwordLoading}
                   className="bg-blue-500 hover:bg-blue-600 text-white"
                 >
-                  {passwordLoading ? 'Updating...' : t('save')}
+                  {passwordLoading ? t('settings_updating') : t('save')}
                 </Button>
               </form>
             </div>
             
             <div className="border-t dark:border-white/10 border-gray-200 pt-4 mt-6">
-              <p className="text-sm font-medium dark:text-white text-gray-900 mb-3">Logout</p>
+              <p className="text-sm font-medium dark:text-white text-gray-900 mb-3">{t('settings_logout_title')}</p>
               <Button onClick={performLogout} className="w-full bg-red-500 hover:bg-red-600 text-white gap-2">
                 <LogOut className="w-4 h-4" /> {t('nav_logout')}
               </Button>
@@ -449,7 +451,7 @@ export default function Settings() {
             <div>
               <p className="text-sm font-medium dark:text-white text-gray-900 mb-2">{t('settings_language')}</p>
               <p className="text-xs dark:text-gray-500 text-gray-500 mb-3">
-                Current language: {lang === 'en' ? 'English' : 'Hebrew'}
+                {t('settings_current_lang')} {lang === 'en' ? 'English' : 'עברית'}
               </p>
               <LanguageSelector
                 onLanguageChange={(newLang) => {
@@ -462,7 +464,7 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium dark:text-white text-gray-900">{t('settings_theme')}</p>
-                <p className="text-xs dark:text-gray-500 text-gray-500">{isDark ? 'Dark' : 'Light'}</p>
+                <p className="text-xs dark:text-gray-500 text-gray-500">{isDark ? t('settings_dark') : t('settings_light')}</p>
               </div>
               <button
                 onClick={() => {

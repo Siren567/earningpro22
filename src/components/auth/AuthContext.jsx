@@ -1,26 +1,67 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChange always fires INITIAL_SESSION on subscription — covering:
-    //   • existing session restored from localStorage
-    //   • session parsed from URL hash (email confirmation callback)
-    //   • no session (null)
-    // loading is set to false ONLY here, eliminating the getSession() race condition
-    // where getSession() returned null before Supabase had processed the URL hash.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (!u) {
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (!u) {
+        setProfile(null);
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Fetch profile whenever user changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchProfile = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, role, is_suspended, subscription_plan')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('[auth] profile fetch failed', error.message);
+          setProfile(null);
+        } else {
+          setProfile(data ?? null);
+        }
+      } catch (e) {
+        console.error('[auth] profile fetch threw', e);
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user?.id]);
+
+  const isAdminProfile = useMemo(() => profile?.role === 'admin', [profile?.role]);
 
   const login = async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -36,7 +77,6 @@ export function AuthProvider({ children }) {
     });
 
     if (error) {
-      // Supabase error path: email confirmation disabled, or explicit conflict error
       const msg = error.message?.toLowerCase() ?? '';
       if (
         msg.includes('already registered') ||
@@ -52,8 +92,6 @@ export function AuthProvider({ children }) {
       return { success: false, error: error.message };
     }
 
-    // Supabase v2 silent path: when email confirmation is ON, a duplicate signup
-    // returns success-like data but with an empty identities array instead of an error.
     if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
       return {
         success: false,
@@ -70,7 +108,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdminProfile, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -4,7 +4,15 @@ import { useAuth } from './AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export default function ProtectedRoute({ children, adminOnly = false }) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading, isAdminProfile } = useAuth();
+
+  console.log('[ProtectedRoute]', {
+    loading,
+    userId: user?.id ?? null,
+    profileRole: profile?.role ?? null,
+    isAdminProfile,
+    adminOnly,
+  });
 
   if (loading) {
     return (
@@ -18,7 +26,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     return <Navigate to="/Auth" replace />;
   }
 
-  if (adminOnly && user.user_metadata?.role !== 'admin') {
+  if (adminOnly && !isAdminProfile) {
     return (
       <div className="min-h-screen dark:bg-[#0a0a0f] bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">

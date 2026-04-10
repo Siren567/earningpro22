@@ -10,6 +10,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, X, Plus, Check, Loader2, Star, ChevronRight } from 'lucide-react';
 import StockLogo from '../stock/StockLogo';
+import { supabase } from '@/lib/supabase';
 
 export default function SearchModal({
   isOpen,
@@ -119,6 +120,15 @@ export default function SearchModal({
             type:     q.quoteType,
           }));
         console.log('[search] results:', mapped.length, mapped.map(r => r.symbol));
+        if (mapped.length > 0) {
+          const records = mapped.map(r => ({
+            symbol: r.symbol, name: r.name, exchange: r.exchange,
+            price: null, change: null, change_percent: null, last_updated: null,
+          }));
+          supabase.from('stocks')
+            .upsert(records, { onConflict: 'symbol', ignoreDuplicates: true })
+            .then(({ error }) => { if (error) console.warn('[search] cache upsert:', error.message); });
+        }
         if (mapped.length === 0) {
           console.warn('[search] 0 results — raw types:', raw.map(q => q.quoteType));
         }

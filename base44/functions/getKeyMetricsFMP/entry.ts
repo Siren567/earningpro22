@@ -74,7 +74,9 @@ Deno.serve(async (req) => {
       : null;
 
     const result = {
-      marketCap: profile?.marketCap ?? null,
+      marketCap:         profile?.marketCap         ?? null,
+      sharesOutstanding: profile?.sharesOutstanding ?? null,
+      floatShares:       profile?.floatShares       ?? null,
       peRatio,
       eps,
       revenue,

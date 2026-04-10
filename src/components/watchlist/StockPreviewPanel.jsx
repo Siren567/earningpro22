@@ -2,6 +2,7 @@ import React from 'react';
 import { X, TrendingUp, TrendingDown, ExternalLink, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { getCachedStockData } from '@/lib/stocksCache';
 
 export default function StockPreviewPanel({ symbol, name, isOpen, onClose }) {
   const { data: quote, isLoading: loadingQuote } = useQuery({
@@ -17,10 +18,7 @@ export default function StockPreviewPanel({ symbol, name, isOpen, onClose }) {
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['previewProfile', symbol],
-    queryFn: async () => {
-      const res = await base44.functions.invoke('getStockData', { symbol });
-      return res.data || null;
-    },
+    queryFn: () => getCachedStockData(symbol),
     enabled: isOpen && !!symbol,
     staleTime: 300000,
     retry: 0,

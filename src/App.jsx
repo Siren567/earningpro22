@@ -20,8 +20,10 @@ import Alerts from './pages/Alerts';
 import StockView from './pages/StockView';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
-import Opportunities from './pages/Opportunities';
-import GeckoAnalyze  from './pages/GeckoAnalyze';
+// TODO: Temporarily hidden — Opportunities & GeckoAnalyze not ready for users yet.
+// Re-enable by restoring the imports and the two Route entries below.
+// import Opportunities from './pages/Opportunities';
+// import GeckoAnalyze  from './pages/GeckoAnalyze';
 import AppLayout from './components/app/AppLayout';
 
 const AppRoutes = () => {
@@ -40,10 +42,11 @@ const AppRoutes = () => {
         <Route path="/Alerts" element={<Alerts />} />
         <Route path="/StockView" element={<StockView />} />
         <Route path="/Settings" element={<Settings />} />
-        <Route path="/Opportunities" element={<Opportunities />} />
-        <Route path="/gecko/analyze" element={<GeckoAnalyze />} />
+        <Route path="/admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
+        {/* TODO: Hidden until ready — <Route path="/Opportunities" element={<Opportunities />} /> */}
+        {/* TODO: Hidden until ready — <Route path="/gecko/analyze" element={<GeckoAnalyze />} /> */}
       </Route>
-      <Route path="/Admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
+      <Route path="/Admin" element={<Navigate to="/admin" replace />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

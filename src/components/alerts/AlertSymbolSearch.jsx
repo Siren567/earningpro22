@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { searchWithCache } from '@/lib/stocksCache';
 import { Search, Loader2, X } from 'lucide-react';
 
 // Normalize: strip non-printable/non-ASCII, collapse spaces, uppercase
@@ -48,9 +49,8 @@ export default function AlertSymbolSearch({ value, assetName, onChange, onSelect
   const { data: results = [], isLoading } = useQuery({
     queryKey: ['alertSymbolSearch', debounced],
     queryFn: async () => {
-      console.log('[AlertSearch] Querying backend for:', debounced);
-      const res = await base44.functions.invoke('searchStocks', { query: debounced });
-      const data = res.data || [];
+      console.log('[AlertSearch] Querying for:', debounced);
+      const data = await searchWithCache(debounced);
       console.log('[AlertSearch] Results count:', data.length, '| symbols:', data.slice(0, 5).map(r => r.symbol).join(', '));
       return data;
     },

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#B4ECFF"/>
+      <stop offset="100%" stop-color="#62BFEE"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#52B4FF"/>
+      <stop offset="100%" stop-color="#1E7EDE"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#3362F0"/>
+      <stop offset="100%" stop-color="#1030C8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Bar 1: shortest, lightest -->
+  <path d="M30,47 L37,47 Q40,47 40,50 L40,77 L27,83 L27,50 Q27,47 30,47 Z" fill="url(#g1)"/>
+
+  <!-- Bar 2: medium -->
+  <path d="M46,33 L53,33 Q56,33 56,36 L56,77 L43,83 L43,36 Q43,33 46,33 Z" fill="url(#g2)"/>
+
+  <!-- Bar 3: tallest, darkest -->
+  <path d="M62,17 L69,17 Q72,17 72,20 L72,77 L59,83 L59,20 Q59,17 62,17 Z" fill="url(#g3)"/>
+</svg>

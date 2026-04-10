@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { useLanguage } from '../LanguageContext';
 import MarketIndexCard from './MarketIndexCard';
 
 const INDICES = [
@@ -21,16 +22,9 @@ const INDICES = [
   },
 ];
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h >= 5  && h < 12) return 'Good morning';
-  if (h >= 12 && h < 17) return 'Good afternoon';
-  if (h >= 17 && h < 21) return 'Good evening';
-  return 'Good night';
-}
-
 export default function DashboardHeader() {
   const { user } = useAuth();
+  const { t, lang, isRTL } = useLanguage();
 
   const firstName = useMemo(() => {
     return (
@@ -40,24 +34,30 @@ export default function DashboardHeader() {
     );
   }, [user]);
 
-  const greeting = useMemo(() => getGreeting(), []);
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h >= 5  && h < 12) return t('greeting_morning');
+    if (h >= 12 && h < 17) return t('greeting_afternoon');
+    if (h >= 17 && h < 21) return t('greeting_evening');
+    return t('greeting_night');
+  }, [t]);
 
   const dateLabel = useMemo(() =>
-    new Date().toLocaleDateString('en-US', {
+    new Date().toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US', {
       weekday: 'long',
       month:   'long',
       day:     'numeric',
     }),
-  []);
+  [lang]);
 
   return (
     <div className="space-y-6">
       {/* Greeting row */}
-      <div className="flex items-end justify-between">
-        <div>
+      <div className={`flex items-end justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
           <h1 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 tracking-tight">
             {greeting},{' '}
-            <span className="dark:text-white text-gray-900 font-bold">{firstName}</span>
+            <span className="dark:text-white text-gray-900 font-bold" dir="ltr">{firstName}</span>
           </h1>
           <p className="text-sm dark:text-gray-500 text-gray-400 mt-1.5">
             {dateLabel}
@@ -70,7 +70,7 @@ export default function DashboardHeader() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
           </span>
-          Markets live
+          {t('markets_live')}
         </div>
       </div>
 

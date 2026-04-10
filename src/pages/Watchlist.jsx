@@ -5,13 +5,14 @@ import { useLanguage } from '../components/LanguageContext';
 import { useMarketDataRefresh } from '../components/hooks/useMarketDataRefresh';
 import { useWatchlist } from '../components/hooks/useWatchlist';
 import { useCustomLists } from '../components/hooks/useCustomLists';
-import { getStockData as yahooGetStockData } from '@/api/yahooFinanceApi';
+import { useSubscription } from '../components/hooks/useSubscription';
+import { getCachedStockData as yahooGetStockData } from '@/lib/stocksCache';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
   Search, Star, TrendingUp, TrendingDown, Plus,
-  Eye, Loader2, RefreshCw
+  Eye, Loader2, RefreshCw, Crown,
 } from 'lucide-react';
 import UnifiedWatchlistMenu from '../components/watchlist/UnifiedWatchlistMenu';
 import StockPreviewPanel from '../components/watchlist/StockPreviewPanel';
@@ -21,6 +22,7 @@ import AssetIcon from '../components/watchlist/AssetIcon';
 import StockLogo from '../components/stock/StockLogo';
 import { CRYPTO_MOCK, RESOURCES_MOCK, getMockAsset, isMockAsset } from '../lib/mockMarketData';
 import SearchModal from '../components/watchlist/SearchModal';
+import UpgradeModal from '../components/subscription/UpgradeModal';
 
 // ─── Deduplication: each symbol belongs to only the first category that claims it ─
 function deduplicateCategories(cats) {
@@ -153,6 +155,10 @@ export default function Watchlist() {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Plan limits
+  const { isPremium, limits } = useSubscription();
+  const [upgradeReason, setUpgradeReason] = useState(null); // non-null = modal open
+
   // Supabase-backed watchlist (falls back to localStorage for guests)
   const {
     items: watchlistItems,
@@ -261,12 +267,16 @@ export default function Watchlist() {
   };
 
   // ─── Watchlist actions ───────────────────────────────────────────────────────
-  const addToWatchlist = (symbol, listId) => {
+  const addToWatchlist = async (symbol, listId) => {
     console.log('[watchlist] addToWatchlist', symbol, '→ list:', listId);
 
     if (listId === 'my-watchlist') {
       if (!isInWatchlist(symbol)) {
-        toggleWatchlist(symbol, 'stock');
+        const result = await toggleWatchlist(symbol, 'stock');
+        if (result === 'LIMIT_REACHED') {
+          setUpgradeReason('watchlist_limit');
+          return;
+        }
         showToast({ title: 'Added', description: `${symbol} added to Favorites` });
       }
     } else if (listId?.startsWith('custom-')) {
@@ -325,6 +335,11 @@ export default function Watchlist() {
   };
 
   const createNewWatchlist = async (name, symbol) => {
+    if (!isPremium) {
+      setWatchlistMenuOpen(null);
+      setUpgradeReason('watchlist_creation_limit');
+      return;
+    }
     const id = await createCustomList(name);
     if (id && symbol) addSymbolToList(symbol, id);
     showToast({ title: 'List Created', description: `Created "${name}"` });
@@ -333,6 +348,13 @@ export default function Watchlist() {
 
   const createCustomCategory = async (name) => {
     if (!name?.trim()) return;
+    // Free plan: no custom lists (maxWatchlists = 1, only Favorites)
+    if (!isPremium) {
+      setShowCreateModal(false);
+      setNewListName('');
+      setUpgradeReason('watchlist_creation_limit');
+      return;
+    }
     const id = await createCustomList(name.trim());
     setNewListName('');
     setShowCreateModal(false);
@@ -357,10 +379,14 @@ export default function Watchlist() {
     removeSymbolFromList(symbol, categoryId);
   };
 
-  const addStockToCurrentList = (symbol) => {
+  const addStockToCurrentList = async (symbol) => {
     if (activeTab === 'my-watchlist') {
       if (!isInWatchlist(symbol)) {
-        toggleWatchlist(symbol, 'stock');
+        const result = await toggleWatchlist(symbol, 'stock');
+        if (result === 'LIMIT_REACHED') {
+          setUpgradeReason('watchlist_limit');
+          return;
+        }
         showToast({ title: 'Added', description: `${symbol} added to Favorites` });
       }
     } else if (activeTab.startsWith('custom-')) {
@@ -431,11 +457,11 @@ export default function Watchlist() {
             <div className="px-3 py-3 border-b dark:border-white/5 border-gray-100 flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-widest dark:text-gray-400 text-gray-500">My Watchlists</span>
               <button
-                onClick={() => setShowCreateModal(true)}
-                title="Create new list"
+                onClick={() => isPremium ? setShowCreateModal(true) : setUpgradeReason('watchlist_creation_limit')}
+                title={isPremium ? 'Create new list' : 'Premium feature'}
                 className="w-6 h-6 rounded-md flex items-center justify-center dark:bg-white/5 dark:hover:bg-blue-500/20 bg-gray-100 hover:bg-blue-50 dark:text-gray-400 text-gray-500 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" />
+                {isPremium ? <Plus className="w-3.5 h-3.5" /> : <Crown className="w-3.5 h-3.5 text-amber-400" />}
               </button>
             </div>
 
@@ -702,6 +728,13 @@ export default function Watchlist() {
         onAddToList={addToWatchlist}
         onCreateList={createNewWatchlist}
         activeListId={activeTab}
+      />
+
+      {/* Upgrade modal */}
+      <UpgradeModal
+        open={!!upgradeReason}
+        onClose={() => setUpgradeReason(null)}
+        reason={upgradeReason ?? 'premium_feature'}
       />
 
       {/* Toast notifications */}
