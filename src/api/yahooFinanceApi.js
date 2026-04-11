@@ -55,6 +55,34 @@ function calcChange(price, prevClose) {
   return { change, changePercent: (change / prevClose) * 100 };
 }
 
+/**
+ * Yahoo often returns HTTP 200 with chart.error or result: null — looks like "success" in Network tab
+ * but the UI gets no series/meta. Logs once per failure for production debugging.
+ */
+function debugYahooChartResponse(symbol, json, endpointLabel) {
+  const err = json?.chart?.error;
+  const res0 = json?.chart?.result?.[0];
+  if (err) {
+    console.warn('[debug:flow] Yahoo chart.error', { symbol, endpointLabel, error: err });
+  }
+  if (!res0 && !err) {
+    console.warn('[debug:flow] Yahoo empty chart (no result, no error)', {
+      symbol,
+      endpointLabel,
+      chartKeys: json?.chart ? Object.keys(json.chart) : [],
+    });
+  }
+  if (!res0 && err) {
+    // already logged error
+  } else if (res0 && res0.meta && res0.meta.regularMarketPrice == null && res0.meta.chartPreviousClose == null) {
+    console.warn('[debug:flow] Yahoo chart meta missing prices', {
+      symbol,
+      endpointLabel,
+      metaSymbol: res0.meta?.symbol,
+    });
+  }
+}
+
 // ─────────────────────────────────────────────
 // 1. SEARCH
 // ─────────────────────────────────────────────
@@ -83,9 +111,7 @@ export async function searchStocks(query) {
   const json = await res.json();
   const quotes = json.quotes ?? [];
 
-  console.log('[yahooSearch] raw results count:', quotes.length);
-
-  return quotes
+  const mapped = quotes
     .filter(item => ['EQUITY', 'ETF', 'MUTUALFUND'].includes(item.quoteType))
     .map(item => ({
       symbol:   item.symbol,                             // Full symbol — e.g. NICE.TA, VOD.L
@@ -94,6 +120,13 @@ export async function searchStocks(query) {
       type:     item.quoteType,
     }))
     .slice(0, 10);
+
+  console.log('[debug:flow] search raw quotes:', quotes.length, '| mapped:', mapped.length, '| types:', [...new Set(quotes.map((q) => q.quoteType))].slice(0, 8));
+  if (quotes.length > 0 && mapped.length === 0) {
+    console.warn('[debug:flow] search: all quotes filtered out by quoteType (legacy shape mismatch?)');
+  }
+
+  return mapped;
 }
 
 // ─────────────────────────────────────────────
@@ -127,6 +160,7 @@ export async function getStockData(symbol) {
   if (!res.ok) throw new Error(`Stock data failed (HTTP ${res.status})`);
 
   const json = await res.json();
+  debugYahooChartResponse(symbol, json, 'v8/chart getStockData');
   const result = json.chart?.result?.[0];
   if (!result) throw new Error('No chart data returned from Yahoo Finance for: ' + symbol);
 
@@ -405,8 +439,12 @@ export async function getIndexData(symbol) {
     if (!res.ok) return null;
 
     const json = await res.json();
+    debugYahooChartResponse(symbol, json, 'v8/chart getIndexData');
     const result = json.chart?.result?.[0];
-    if (!result) return null;
+    if (!result) {
+      console.warn('[debug:flow] getIndexData → null result', symbol, 'ok=', res.ok);
+      return null;
+    }
 
     const m       = result.meta;
     const closes  = result.indicators?.quote?.[0]?.close ?? [];
@@ -414,7 +452,7 @@ export async function getIndexData(symbol) {
     const price     = m.regularMarketPrice ?? null;
     const { change, changePercent } = calcChange(price, prevClose);
 
-    return {
+    const out = {
       symbol:        m.symbol,
       price,
       change,
@@ -422,6 +460,12 @@ export async function getIndexData(symbol) {
       // Filter out null/NaN candles (market closed days return nulls)
       sparkline: closes.filter(v => v != null && Number.isFinite(v)),
     };
+    console.log('[debug:flow] getIndexData mapped', symbol, {
+      price: out.price,
+      changePercent: out.changePercent,
+      sparklineLen: out.sparkline.length,
+    });
+    return out;
   } catch {
     return null;
   }
@@ -447,6 +491,7 @@ export async function getStockQuote(symbol) {
   if (!res.ok) throw new Error(`Quote failed (HTTP ${res.status})`);
 
   const json = await res.json();
+  debugYahooChartResponse(symbol, json, 'v8/chart getStockQuote');
   const m = json.chart?.result?.[0]?.meta;
   if (!m) throw new Error('No quote data from Yahoo Finance for: ' + symbol);
 
@@ -454,7 +499,7 @@ export async function getStockQuote(symbol) {
   const price     = m.regularMarketPrice ?? null;
   const { change, changePercent } = calcChange(price, prevClose);
 
-  return {
+  const out = {
     current:                 price,
     change,
     percentChange:           changePercent,
@@ -470,6 +515,14 @@ export async function getStockQuote(symbol) {
     afterHoursChange:        m.postMarketChange        ?? null,
     afterHoursChangePercent: m.postMarketChangePercent ?? null,
   };
+
+  console.log('[debug:flow] getStockQuote mapped', symbol, {
+    current: out.current,
+    has_fp: typeof url === 'string' && url.includes('_fp='),
+    urlPreview: url.slice(0, 88),
+  });
+
+  return out;
 }
 
 // ─────────────────────────────────────────────

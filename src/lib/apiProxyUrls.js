@@ -46,5 +46,29 @@ export function proxyApiUrl(proxy, resourcePath, query) {
   }
 
   const qs = sp.toString();
-  return `${base}/api/${proxy}?${qs}`;
+  if (!sp.get(PROXY_FORWARD_PARAM)) {
+    throw new Error(`proxyApiUrl: ${PROXY_FORWARD_PARAM} is required (Yahoo/FMP path as query, not URL segments)`);
+  }
+
+  const href = `${base}/api/${proxy}?${qs}`;
+
+  // Guard: never ship path-style /api/yf/v8/... (Vercel 404). Correct shape is /api/yf?_fp=v8%2F...
+  if (typeof window !== 'undefined') {
+    try {
+      const u = new URL(href, window.location.origin);
+      const p = u.pathname;
+      if (p.includes('/api/yf/v') || p.includes('/api/yf2/v')) {
+        console.error('[proxyApiUrl] BLOCKED legacy path — must use ?_fp= only:', href);
+      }
+      const ok =
+        p.endsWith('/api/yf') || p.endsWith('/api/yf2') || p.endsWith('/api/fmp');
+      if (!ok) {
+        console.warn('[proxyApiUrl] unexpected pathname (expected …/api/yf|yf2|fmp):', p);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return href;
 }
