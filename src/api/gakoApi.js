@@ -1,16 +1,13 @@
 /**
  * Gako AI client — browser-side helper.
  *
- * analyzeStock calls /api/gako/analyze proxied via vite.config.js.
- * wyckoffAnalysis uses supabase.functions.invoke() directly so that
- * the Supabase SDK can attach both apikey + Authorization automatically.
+ * Both analyzeStock and wyckoffAnalysis use supabase.functions.invoke() so that
+ * the Supabase SDK attaches apikey + Authorization automatically.
  *
  * The Gemini API key is NEVER exposed to the browser — it lives in Supabase secrets.
  */
 
 import { supabase } from '../lib/supabase';
-
-const ANALYZE_URL   = '/api/gako/analyze';
 
 /**
  * analyzeStock({ symbol, companyName, earningsDate?, marketData? })
@@ -32,22 +29,24 @@ export async function analyzeStock({ symbol, companyName, earningsDate, marketDa
   if (!symbol)      throw new Error('[gakoApi] analyzeStock: symbol is required');
   if (!companyName) throw new Error('[gakoApi] analyzeStock: companyName is required');
 
-  let res, data;
+  let data, invokeError;
   try {
-    res = await fetch(ANALYZE_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ symbol, companyName, earningsDate, marketData }),
-      signal:  AbortSignal.timeout(30_000), // AI calls can take a few seconds
-    });
-    data = await res.json();
+    ({ data, error: invokeError } = await supabase.functions.invoke('gako-analyze', {
+      body: { symbol, companyName, earningsDate, marketData },
+    }));
   } catch (networkErr) {
     console.error('[gakoApi] network error:', networkErr.message);
     throw networkErr;
   }
 
-  if (!res.ok || !data.success) {
-    const errMsg = data?.error || `HTTP ${res.status}`;
+  if (invokeError) {
+    const errMsg = invokeError.message ?? 'Edge function error';
+    console.error('[gakoApi] analyzeStock invoke error:', errMsg);
+    throw new Error(errMsg);
+  }
+
+  if (!data?.success) {
+    const errMsg = data?.error || 'gako-analyze returned no result';
     console.error('[gakoApi] analyzeStock failed:', errMsg);
 
     // Return server-provided fallback so callers can still render something
