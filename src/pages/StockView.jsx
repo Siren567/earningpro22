@@ -697,7 +697,7 @@ export default function StockView() {
 
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 max-w-full space-y-8">
       <div>
         <h1 className="text-2xl font-bold dark:text-white text-gray-900 mb-2">{t('stock_view_title')}</h1>
         <p className="text-sm dark:text-gray-500 text-gray-500">{t('stock_ai_subtitle')}</p>

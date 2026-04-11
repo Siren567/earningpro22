@@ -42,8 +42,8 @@ export default function AppLayout() {
   // Suspended users see a block screen
   if (isSuspended) {
     return (
-      <div className="min-h-screen dark:bg-[#0B1220] bg-[#F8FAFC] flex items-center justify-center p-6">
-        <div className="text-center max-w-sm">
+      <div className="flex min-h-[100dvh] w-full flex-1 flex-col items-center justify-center overflow-y-auto overscroll-y-contain bg-[#F8FAFC] p-6 pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] dark:bg-[#0B1220]">
+        <div className="max-w-sm text-center">
           <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-5">
             <Ban className="w-8 h-8 text-red-400" />
           </div>
@@ -63,7 +63,16 @@ export default function AppLayout() {
   }
 
   return (
-    <div className={`min-h-screen dark:bg-[#0B1220] bg-[#F8FAFC] flex ${isRTL ? 'flex-row-reverse' : ''}`}>
+    <div
+      className={[
+        'flex w-full flex-1 min-h-0 bg-[#F8FAFC] dark:bg-[#0B1220]',
+        isRTL ? 'flex-row-reverse' : '',
+        /* Mobile: viewport-filling shell; scroll only in <main> */
+        'max-lg:h-[100dvh] max-lg:max-h-[100dvh] max-lg:overflow-hidden max-lg:overscroll-none',
+        /* Desktop: normal document flow */
+        'lg:min-h-screen lg:h-auto lg:max-h-none lg:overflow-visible',
+      ].join(' ')}
+    >
       {/* Desktop Sidebar */}
       <aside className={`hidden lg:flex flex-col ${sidebarOpen ? 'w-64' : 'w-20'} dark:bg-[#0D1628] bg-white border-r dark:border-[#4CBFF5]/10 border-[#DDE4F0] shadow-[1px_0_0_0_#DDE4F0] dark:shadow-none transition-all duration-300 fixed top-0 bottom-0 ${isRTL ? 'right-0 border-l dark:border-l-[#4CBFF5]/10 border-l-[#DDE4F0] border-r-0' : 'left-0'} z-40`}>
         <div className="p-4 flex items-center justify-between border-b dark:border-[#4CBFF5]/10 border-[#DDE4F0]">
@@ -199,9 +208,16 @@ export default function AppLayout() {
       )}
 
       {/* Main content */}
-      <div className={`flex-1 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} ${isRTL ? (sidebarOpen ? 'lg:mr-64 lg:ml-0' : 'lg:mr-20 lg:ml-0') : ''} transition-all duration-300`}>
+      <div
+        className={[
+          'flex min-h-0 min-w-0 flex-1 flex-col transition-all duration-300',
+          sidebarOpen ? 'lg:ml-64' : 'lg:ml-20',
+          isRTL ? (sidebarOpen ? 'lg:mr-64 lg:ml-0' : 'lg:mr-20 lg:ml-0') : '',
+          'max-lg:overflow-hidden',
+        ].join(' ')}
+      >
         {/* Top bar */}
-        <header className="sticky top-0 z-30 h-14 sm:h-16 dark:bg-[#0B1220]/90 bg-white/90 backdrop-blur-xl border-b dark:border-[#4CBFF5]/10 border-[#DDE4F0] shadow-[0_1px_0_0_#DDE4F0] dark:shadow-none flex items-center justify-between px-4 lg:px-6">
+        <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between border-b border-[#DDE4F0] bg-white/90 px-4 shadow-[0_1px_0_0_#DDE4F0] backdrop-blur-xl dark:border-[#4CBFF5]/10 dark:bg-[#0B1220]/90 dark:shadow-none max-lg:min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] max-lg:pt-[max(12px,env(safe-area-inset-top,0px))] max-lg:pb-3 lg:h-16 lg:py-0">
           {/* Mobile: hamburger + logo */}
           <div className="flex items-center gap-3 lg:hidden">
             <button
@@ -223,15 +239,19 @@ export default function AppLayout() {
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="p-4 lg:p-6 pb-24 lg:pb-6">
-          <Outlet />
+        {/* Page content — only this region scrolls on mobile */}
+        <main className="app-main-scroll max-w-[100vw] p-4 max-lg:flex-1 max-lg:min-h-0 max-lg:overflow-x-hidden max-lg:overflow-y-auto max-lg:overscroll-y-contain max-lg:pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:overflow-visible lg:p-6 lg:pb-6">
+          <div className="mx-auto min-w-0 max-w-full">
+            <Outlet />
+          </div>
         </main>
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 dark:bg-[#0D1628] bg-white border-t dark:border-[#4CBFF5]/10 border-[#DDE4F0] shadow-[0_-1px_0_0_#DDE4F0] dark:shadow-none"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#DDE4F0] bg-white shadow-[0_-1px_0_0_#DDE4F0] dark:border-[#4CBFF5]/10 dark:bg-[#0D1628] dark:shadow-none lg:hidden"
+        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom, 0px))' }}
+        aria-label="Mobile navigation"
       >
         <div className="flex items-stretch justify-around px-1 pt-1 pb-1">
           {[
@@ -247,20 +267,20 @@ export default function AppLayout() {
               <Link
                 key={item.path}
                 to={item.path}
-                className="flex flex-col items-center justify-center gap-1 flex-1 py-2 min-h-[52px] relative transition-colors"
+                className="relative flex min-h-[52px] flex-1 touch-manipulation flex-col items-center justify-center gap-1 py-2 transition-colors active:opacity-90"
               >
                 {/* Active pill background */}
                 {isActive && (
-                  <div className={`absolute inset-x-2 inset-y-1 rounded-xl ${isDark ? 'bg-[#4CBFF5]/10' : 'bg-[#274690]/8'}`} />
+                  <div className={`pointer-events-none absolute inset-x-2 inset-y-1 rounded-xl ${isDark ? 'bg-[#4CBFF5]/10' : 'bg-[#274690]/8'}`} />
                 )}
 
                 <div className="relative z-10">
                   <item.icon
-                    className="w-[22px] h-[22px] transition-colors"
+                    className="h-[22px] w-[22px] transition-colors"
                     style={{ color: isActive ? activeColor : '' }}
                   />
-                  {item.badge > 0 && (
-                    <span className="absolute -top-1 -right-1.5 min-w-[14px] h-3.5 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center px-0.5">
+                  {typeof item.badge === 'number' && item.badge > 0 && (
+                    <span className="absolute -right-1.5 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
                       {item.badge}
                     </span>
                   )}

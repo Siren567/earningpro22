@@ -437,7 +437,7 @@ export default function Watchlist() {
 
   // ─── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 max-w-full space-y-4">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -447,7 +447,7 @@ export default function Watchlist() {
       </div>
 
       {/* Main Layout: Sidebar + Content */}
-      <div className="flex gap-4 items-start">
+      <div className="flex min-w-0 items-start gap-4">
 
         {/* ── LEFT SIDEBAR ── */}
         <aside className="w-56 flex-shrink-0 hidden md:block">

@@ -205,7 +205,7 @@ export default function Earnings() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 max-w-full space-y-4">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -235,16 +235,16 @@ export default function Earnings() {
 
       {/* ── Free plan limit banner ────────────────────────────────────────── */}
       {!isPremium && (
-        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl dark:bg-amber-500/5 bg-amber-50 border dark:border-amber-400/15 border-amber-200">
-          <div className="flex items-center gap-2">
-            <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-            <p className="text-xs dark:text-gray-300 text-gray-700">
+        <div className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 dark:border-amber-400/15 dark:bg-amber-500/5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2">
+            <Crown className="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
+            <p className="min-w-0 text-xs text-gray-700 dark:text-gray-300">
               {t('earnings_free_showing')} <span className="font-semibold">{limits.earningsWindowDays} {t('status_days')}</span> {t('earnings_free_plan')}
             </p>
           </div>
           <Link
             to="/Plans"
-            className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors whitespace-nowrap"
+            className="shrink-0 text-[11px] font-semibold text-amber-400 transition-colors hover:text-amber-300"
           >
             {t('earnings_upgrade_full')}
           </Link>

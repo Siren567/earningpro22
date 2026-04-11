@@ -345,7 +345,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="min-w-0 max-w-full space-y-6 sm:space-y-8">
       <DisclaimerModal open={showDisclaimer} onAccept={handleAcceptDisclaimer} />
 
       {/* Greeting + market overview */}

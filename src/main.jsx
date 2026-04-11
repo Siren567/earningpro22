@@ -5,6 +5,18 @@ import '@/index.css'
 import { I18nProvider } from '@/lib/hebrew.tsx'
 import { AlertsProvider } from '@/contexts/AlertsContext'
 
+function syncPwaStandaloneClass() {
+  const standalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    // iOS Safari add-to-home-screen
+    /** @type {{ standalone?: boolean }} */ (window.navigator).standalone === true
+  document.documentElement.classList.toggle('pwa-standalone', standalone)
+}
+syncPwaStandaloneClass()
+window.matchMedia('(display-mode: standalone)').addEventListener('change', syncPwaStandaloneClass)
+window.matchMedia('(display-mode: fullscreen)').addEventListener('change', syncPwaStandaloneClass)
+
 // Register service worker — handles push notifications + static asset caching.
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js', { scope: '/' })

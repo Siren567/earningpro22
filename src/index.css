@@ -86,29 +86,41 @@
 
   html {
     height: 100%;
-    /* Prevent over-scroll bounce revealing the background in standalone mode */
-    overflow: hidden;
+    overflow-x: hidden;
+    /* Single vertical scrollport on body for auth/landing; in-app scroll is inside AppLayout <main> */
+    overflow-y: hidden;
+    overscroll-behavior-x: none;
   }
 
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
+    min-height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
     overscroll-behavior: none;
-    height: 100%;
-    /* Allow the app shell to scroll internally */
-    overflow: auto;
   }
 
   #root {
+    display: flex;
+    flex-direction: column;
     min-height: 100%;
-    /* Use dvh so the app fills the viewport correctly on mobile browsers */
     min-height: 100dvh;
+    overflow-x: hidden;
   }
 }
 
 @layer utilities {
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Main scroll region inside mobile app shell — native-like momentum + no chain bounce */
+  .app-main-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
   }
 
   /* Dark mode: electric blue accent (#4CBFF5) */

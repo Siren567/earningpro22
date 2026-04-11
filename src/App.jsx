@@ -62,7 +62,10 @@ function App() {
         <QueryClientProvider client={queryClientInstance}>
           <AuthProvider>
             <Router>
-              <AppRoutes />
+              {/* Fills viewport height so AppLayout can use flex + internal scroll on mobile */}
+              <div className="flex min-h-0 w-full flex-1 flex-col">
+                <AppRoutes />
+              </div>
             </Router>
             <Toaster />
           </AuthProvider>

@@ -183,11 +183,11 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="min-w-0 w-full max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold dark:text-white text-gray-900">{t('settings_title')}</h1>
 
       <Tabs defaultValue="profile">
-        <TabsList className="dark:bg-white/5 bg-gray-100 rounded-xl p-1">
+        <TabsList className="flex h-auto w-full max-w-full flex-wrap gap-1 rounded-xl bg-gray-100 p-1 dark:bg-white/5">
           <TabsTrigger value="profile" className="rounded-lg gap-1.5 data-[state=active]:dark:bg-white/10 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <User className="w-4 h-4" /> {t('settings_profile')}
           </TabsTrigger>

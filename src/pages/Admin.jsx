@@ -811,7 +811,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="space-y-6 w-full max-w-6xl">
+    <div className="min-w-0 w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-xl font-bold dark:text-white text-gray-900">Admin Panel</h1>
         <p className="text-sm dark:text-gray-500 text-gray-400 mt-0.5">
