@@ -1,14 +1,17 @@
-// Vercel serverless — proxies Yahoo Finance query2 (fallback host).
+// Vercel: /api/yf2 — same _fp pattern as api/yf.js (query2 host).
 
-import { parseProxyPath } from '../lib/parseProxyPath.js';
+import { getForwardedUpstream, isYahooUpstreamPath } from '../lib/apiProxyShared.js';
+import { PROXY_FORWARD_PARAM } from '../lib/proxyConstants.js';
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 export default async function handler(req, res) {
-  const parsed = parseProxyPath(req, '/api/yf2');
-  if (!parsed) {
-    return res.status(404).json({ error: 'Not found' });
+  const parsed = getForwardedUpstream(req);
+  if (!parsed || !isYahooUpstreamPath(parsed.path)) {
+    return res.status(400).json({
+      error: `Missing or invalid ${PROXY_FORWARD_PARAM}`,
+    });
   }
 
   const { path, searchParams } = parsed;

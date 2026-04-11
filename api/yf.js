@@ -1,15 +1,18 @@
-// Vercel serverless — proxies Yahoo Finance query1.
-// Path is taken from the request URL (not only req.query.path) for reliable routing.
+// Vercel: single route /api/yf — multi-segment Yahoo paths go in ?_fp= (see lib/proxyConstants.js).
+// Vercel's builder only maps [...path] to one URL segment, so /api/yf/v8/... used to 404 in production.
 
-import { parseProxyPath } from '../lib/parseProxyPath.js';
+import { getForwardedUpstream, isYahooUpstreamPath } from '../lib/apiProxyShared.js';
+import { PROXY_FORWARD_PARAM } from '../lib/proxyConstants.js';
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 export default async function handler(req, res) {
-  const parsed = parseProxyPath(req, '/api/yf');
-  if (!parsed) {
-    return res.status(404).json({ error: 'Not found' });
+  const parsed = getForwardedUpstream(req);
+  if (!parsed || !isYahooUpstreamPath(parsed.path)) {
+    return res.status(400).json({
+      error: `Missing or invalid ${PROXY_FORWARD_PARAM} (expected Yahoo path like v8/finance/chart/SYMBOL)`,
+    });
   }
 
   const { path, searchParams } = parsed;

@@ -1,6 +1,20 @@
 import react from "@vitejs/plugin-react"
 import { defineConfig, loadEnv } from "vite"
 import path from "path"
+import { PROXY_FORWARD_PARAM } from "./lib/proxyConstants.js"
+
+/** Expand ?_fp=upstream/path into proxyReq path (same contract as Vercel api/yf.js). */
+function devProxyExpandForwardParam(proxy) {
+  proxy.on("proxyReq", (proxyReq, req) => {
+    const url = new URL(req.url || "/", "http://localhost")
+    const fp = url.searchParams.get(PROXY_FORWARD_PARAM)
+    if (fp == null) return
+    url.searchParams.delete(PROXY_FORWARD_PARAM)
+    const qs = url.searchParams.toString()
+    const destPath = `/${String(fp).replace(/^\/+/, "")}`
+    proxyReq.path = qs ? `${destPath}?${qs}` : destPath
+  })
+}
 
 export default defineConfig(({ mode }) => {
   // Load .env so non-VITE_ vars are accessible here (server-side only, never bundled)
@@ -13,11 +27,11 @@ export default defineConfig(({ mode }) => {
     server: {
       allowedHosts: 'all',
       proxy: {
-        // Proxy Yahoo Finance requests to avoid CORS.
+        // Proxy Yahoo Finance — browser calls /api/yf?_fp=v8%2F...&... ; dev expands _fp for query1.
         '/api/yf': {
           target: 'https://query1.finance.yahoo.com',
           changeOrigin: true,
-          rewrite: p => p.replace(/^\/api\/yf/, ''),
+          configure: devProxyExpandForwardParam,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
             'Accept': 'application/json',
@@ -26,7 +40,7 @@ export default defineConfig(({ mode }) => {
         '/api/yf2': {
           target: 'https://query2.finance.yahoo.com',
           changeOrigin: true,
-          rewrite: p => p.replace(/^\/api\/yf2/, ''),
+          configure: devProxyExpandForwardParam,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
             'Accept': 'application/json',
@@ -39,14 +53,22 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite:      (p) => p.replace(/^\/api\/gako\//, '/functions/v1/gako-'),
         },
-        // FMP proxy — API key injected server-side, never in the JS bundle
+        // FMP — expand _fp then append apikey (single listener = order guaranteed).
         '/api/fmp': {
           target: 'https://financialmodelingprep.com',
           changeOrigin: true,
-          rewrite: (p) => {
-            const stripped = p.replace(/^\/api\/fmp/, '');
-            const sep = stripped.includes('?') ? '&' : '?';
-            return `${stripped}${sep}apikey=${fmpKey}`;
+          configure(proxy) {
+            proxy.on("proxyReq", (proxyReq, req) => {
+              const url = new URL(req.url || "/", "http://localhost")
+              const fp = url.searchParams.get(PROXY_FORWARD_PARAM)
+              if (fp == null) return
+              url.searchParams.delete(PROXY_FORWARD_PARAM)
+              const destPath = `/${String(fp).replace(/^\/+/, "")}`
+              const u = new URL(destPath + (url.search ? url.search : ""), "http://localhost")
+              u.searchParams.set("apikey", fmpKey)
+              const qs = u.searchParams.toString()
+              proxyReq.path = qs ? `${u.pathname}?${qs}` : u.pathname
+            })
           },
         },
       },

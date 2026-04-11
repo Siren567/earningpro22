@@ -1,6 +1,7 @@
-// Vercel serverless — proxies Financial Modeling Prep with server-side API key.
+// Vercel: /api/fmp — FMP path in ?_fp= (e.g. stable/profile).
 
-import { parseProxyPath } from '../lib/parseProxyPath.js';
+import { getForwardedUpstream, isFmpUpstreamPath } from '../lib/apiProxyShared.js';
+import { PROXY_FORWARD_PARAM } from '../lib/proxyConstants.js';
 
 export default async function handler(req, res) {
   const apiKey = process.env.FMP_API_KEY;
@@ -8,9 +9,11 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'FMP_API_KEY environment variable is not configured' });
   }
 
-  const parsed = parseProxyPath(req, '/api/fmp');
-  if (!parsed) {
-    return res.status(404).json({ error: 'Not found' });
+  const parsed = getForwardedUpstream(req);
+  if (!parsed || !isFmpUpstreamPath(parsed.path)) {
+    return res.status(400).json({
+      error: `Missing or invalid ${PROXY_FORWARD_PARAM} (expected FMP path like stable/profile)`,
+    });
   }
 
   const { path, searchParams } = parsed;
