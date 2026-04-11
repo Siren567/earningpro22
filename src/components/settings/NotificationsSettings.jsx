@@ -105,16 +105,23 @@ const TIER = {
   },
 };
 
-function NotificationCard({ icon: Icon, title, description, tier = 'distant', children }) {
-  const t = TIER[tier];
+function NotificationCard({
+  icon: Icon,
+  title,
+  description,
+  tier = 'distant',
+  comingSoonLabel = 'Coming Soon',
+  children,
+}) {
+  const tierSpec = TIER[tier];
   return (
     <div
-      className={`relative rounded-2xl border overflow-hidden transition-all duration-200 ${t.bg} ${t.border} ${t.hover}`}
+      className={`relative rounded-2xl border overflow-hidden transition-all duration-200 ${tierSpec.bg} ${tierSpec.border} ${tierSpec.hover}`}
     >
       {/* Lock overlay — no blur, just a very light tint to signal disabled state */}
       <div
         className="absolute inset-0 z-10 cursor-not-allowed rounded-2xl"
-        style={{ background: t.overlayBg }}
+        style={{ background: tierSpec.overlayBg }}
         onClick={e => e.stopPropagation()}
       />
 
@@ -137,13 +144,13 @@ function NotificationCard({ icon: Icon, title, description, tier = 'distant', ch
             </p>
           </div>
         </div>
-        <ComingSoonBadge label={t('lang_coming_soon')} />
+        <ComingSoonBadge label={comingSoonLabel} />
       </div>
 
       {/* Preview controls — readable but subtly dimmed to reinforce locked state */}
       <div
         className={`${tier === 'primary' ? 'px-6 py-5' : 'px-5 py-4'} pointer-events-none select-none`}
-        style={{ opacity: t.inner }}
+        style={{ opacity: tierSpec.inner }}
       >
         {children}
       </div>
@@ -154,7 +161,11 @@ function NotificationCard({ icon: Icon, title, description, tier = 'distant', ch
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function NotificationsSettings() {
-  const { t } = useLanguage();
+  const lang = useLanguage();
+  const t =
+    typeof lang?.t === 'function'
+      ? lang.t
+      : (key) => (typeof key === 'string' ? key : '');
 
   return (
     <div className="space-y-4">
@@ -165,6 +176,7 @@ export default function NotificationsSettings() {
         title={t('notif_push_title')}
         description={t('notif_push_desc')}
         tier="primary"
+        comingSoonLabel={t('lang_coming_soon')}
       >
         <PreviewRow
           label={t('notif_push_enable')}
@@ -185,6 +197,7 @@ export default function NotificationsSettings() {
         title={t('notif_earnings_title')}
         description={t('notif_earnings_desc')}
         tier="secondary"
+        comingSoonLabel={t('lang_coming_soon')}
       >
         <PreviewRow
           label={t('notif_earnings_remind')}
@@ -211,6 +224,7 @@ export default function NotificationsSettings() {
         title={t('notif_price_title')}
         description={t('notif_price_desc')}
         tier="distant"
+        comingSoonLabel={t('lang_coming_soon')}
       >
         <PreviewRow
           label={t('notif_price_unusual')}
@@ -230,6 +244,7 @@ export default function NotificationsSettings() {
         title={t('notif_watchlist_title')}
         description={t('notif_watchlist_desc')}
         tier="distant"
+        comingSoonLabel={t('lang_coming_soon')}
       >
         <PreviewRow
           label={t('notif_watchlist_activity')}
@@ -249,6 +264,7 @@ export default function NotificationsSettings() {
         title={t('notif_news_title')}
         description={t('notif_news_desc')}
         tier="distant"
+        comingSoonLabel={t('lang_coming_soon')}
       >
         <PreviewRow
           label={t('notif_breaking_news')}
@@ -268,6 +284,7 @@ export default function NotificationsSettings() {
         title={t('notif_email_title')}
         description={t('notif_email_desc')}
         tier="distant"
+        comingSoonLabel={t('lang_coming_soon')}
       >
         <PreviewRow
           label={t('notif_email_weekly')}

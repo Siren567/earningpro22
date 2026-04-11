@@ -534,12 +534,19 @@ function UsersTab({ profiles, isLoading }) {
 
                     {/* Plan */}
                     <td className="px-5 py-3.5">
-                      <PlanSelect
-                        value={user.subscription_plan || 'free'}
-                        onChange={plan => changePlan.mutate({ id: user.id, plan })}
-                        disabled={owner || (rowPending && pending.type === 'plan')}
-                        loading={rowPending && pending.type === 'plan'}
-                      />
+                      <div className="flex flex-col gap-1 items-start">
+                        <PlanSelect
+                          value={user.subscription_plan || 'free'}
+                          onChange={plan => changePlan.mutate({ id: user.id, plan })}
+                          disabled={owner || (rowPending && pending.type === 'plan')}
+                          loading={rowPending && pending.type === 'plan'}
+                        />
+                        {(owner || adminUser) && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 uppercase tracking-wide whitespace-nowrap">
+                            <ShieldCheck className="w-2.5 h-2.5" /> Full Access
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Status */}

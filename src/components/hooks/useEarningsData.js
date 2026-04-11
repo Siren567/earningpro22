@@ -10,6 +10,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { proxyApiUrl } from '@/lib/apiProxyUrls';
 
 export const SCREENER_IDS = [
   'most_actives',
@@ -21,9 +22,13 @@ export const SCREENER_IDS = [
 ];
 
 async function fetchScreener(id) {
-  const url =
-    `/api/yf/v1/finance/screener/predefined/saved` +
-    `?scrIds=${id}&formatted=false&lang=en-US&region=US&count=100`;
+  const url = proxyApiUrl('yf', 'v1/finance/screener/predefined/saved', {
+    scrIds: id,
+    formatted: false,
+    lang: 'en-US',
+    region: 'US',
+    count: 100,
+  });
   const res = await fetch(url);
   if (!res.ok) return [];
   const json = await res.json();

@@ -16,9 +16,10 @@
  * Fields not available from /v8/finance/chart (marketCap, PE, EPS, avgVolume) remain null.
  */
 
-const YF_SEARCH   = '/api/yf/v1/finance/search';
-const YF_CHART    = '/api/yf/v8/finance/chart';
-const YF_SUMMARY  = '/api/yf/v10/finance/quoteSummary';
+import { proxyApiUrl } from '@/lib/apiProxyUrls';
+
+const yf = (path, query) => proxyApiUrl('yf', path, query);
+const yf2 = (path, query) => proxyApiUrl('yf2', path, query);
 
 // Yahoo marketState → internal status enum
 const MARKET_STATE_MAP = {
@@ -68,8 +69,13 @@ export async function searchStocks(query) {
   const q = query.replace(/[^\x20-\x7E]/g, '').trim();
   if (!q) return [];
 
-  const url =
-    `${YF_SEARCH}?q=${encodeURIComponent(q)}&quotesCount=10&newsCount=0&lang=en-US&region=US`;
+  const url = yf('v1/finance/search', {
+    q,
+    quotesCount: 10,
+    newsCount: 0,
+    lang: 'en-US',
+    region: 'US',
+  });
 
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Search failed (HTTP ${res.status})`);
@@ -111,8 +117,11 @@ export async function searchStocks(query) {
 export async function getStockData(symbol) {
   // range=60d gives 60 daily candles — used to compute avgVolume.
   // Meta fields (price, 52w, etc.) are unaffected by range.
-  const url =
-    `${YF_CHART}/${encodeURIComponent(symbol)}?interval=1d&range=60d&includePrePost=true`;
+  const url = yf(`v8/finance/chart/${encodeURIComponent(symbol)}`, {
+    interval: '1d',
+    range: '60d',
+    includePrePost: true,
+  });
 
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Stock data failed (HTTP ${res.status})`);
@@ -233,10 +242,18 @@ export async function getStockFundamentals(symbol) {
   const modules = 'summaryDetail,defaultKeyStatistics,price,assetProfile,fundProfile,financialData';
 
   const attempts = [
-    `/api/yf/v10/finance/quoteSummary/${enc}?modules=${modules}&formatted=true&corsDomain=finance.yahoo.com`,
-    `/api/yf2/v10/finance/quoteSummary/${enc}?modules=${modules}&formatted=true&corsDomain=finance.yahoo.com`,
-    `/api/yf/v10/finance/quoteSummary/${enc}?modules=${modules}`,
-    `/api/yf2/v10/finance/quoteSummary/${enc}?modules=${modules}`,
+    yf(`v10/finance/quoteSummary/${enc}`, {
+      modules,
+      formatted: true,
+      corsDomain: 'finance.yahoo.com',
+    }),
+    yf2(`v10/finance/quoteSummary/${enc}`, {
+      modules,
+      formatted: true,
+      corsDomain: 'finance.yahoo.com',
+    }),
+    yf(`v10/finance/quoteSummary/${enc}`, { modules }),
+    yf2(`v10/finance/quoteSummary/${enc}`, { modules }),
   ];
 
   // Fire all 4 in parallel; take the first fulfilled result with usable data
@@ -377,8 +394,11 @@ export async function getStockFundamentals(symbol) {
  * (5 daily closes → usable as a mini chart without extra calls).
  */
 export async function getIndexData(symbol) {
-  const url =
-    `${YF_CHART}/${encodeURIComponent(symbol)}?interval=1d&range=5d&includePrePost=false`;
+  const url = yf(`v8/finance/chart/${encodeURIComponent(symbol)}`, {
+    interval: '1d',
+    range: '5d',
+    includePrePost: false,
+  });
 
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
@@ -417,8 +437,11 @@ export async function getIndexData(symbol) {
  * Works for all exchange-suffixed symbols (NICE.TA, VOD.L, etc.).
  */
 export async function getStockQuote(symbol) {
-  const url =
-    `${YF_CHART}/${encodeURIComponent(symbol)}?interval=1m&range=1d&includePrePost=true`;
+  const url = yf(`v8/finance/chart/${encodeURIComponent(symbol)}`, {
+    interval: '1m',
+    range: '1d',
+    includePrePost: true,
+  });
 
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Quote failed (HTTP ${res.status})`);

@@ -1,18 +1,28 @@
-// Vercel serverless function — proxies Yahoo Finance query1
-// Adds the required User-Agent header so Yahoo doesn't reject the request.
-// Matches any path under /api/yf/*, e.g. /api/yf/v8/finance/chart/AAPL?interval=1d
+// Vercel serverless — proxies Yahoo Finance query1.
+// Path is taken from the request URL (not only req.query.path) for reliable routing.
+
+import { parseProxyPath } from '../lib/parseProxyPath.js';
+
+const UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 export default async function handler(req, res) {
-  const { path: pathParts, ...query } = req.query;
-  const pathStr = Array.isArray(pathParts) ? pathParts.join('/') : (pathParts ?? '');
-  const qs = new URLSearchParams(query).toString();
-  const url = `https://query1.finance.yahoo.com/${pathStr}${qs ? '?' + qs : ''}`;
+  const parsed = parseProxyPath(req, '/api/yf');
+  if (!parsed) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  const { path, searchParams } = parsed;
+  const target = new URL(`https://query1.finance.yahoo.com/${path}`);
+  searchParams.forEach((v, k) => {
+    target.searchParams.set(k, v);
+  });
 
   try {
-    const upstream = await fetch(url, {
+    const upstream = await fetch(target.toString(), {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-        'Accept': 'application/json',
+        'User-Agent': UA,
+        Accept: 'application/json',
       },
     });
     const body = await upstream.text();

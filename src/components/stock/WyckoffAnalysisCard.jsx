@@ -21,6 +21,7 @@ import { useSubscription } from '@/components/hooks/useSubscription';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useLanguage } from '@/components/LanguageContext';
 import { canRunAiToday, incrementAiUsage, getAiUsageRemaining } from '@/lib/aiUsageTracker';
+import { proxyApiUrl } from '@/lib/apiProxyUrls';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
 import { WyckoffComingSoonCard } from './WyckoffComingSoon';
 
@@ -39,7 +40,10 @@ const COLOR = {
 
 // ─── Yahoo Finance OHLCV fetch ─────────────────────────────────────────────────
 async function fetchOHLCV(symbol) {
-  const url = `/api/yf/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=3mo`;
+  const url = proxyApiUrl('yf', `v8/finance/chart/${encodeURIComponent(symbol)}`, {
+    interval: '1d',
+    range: '3mo',
+  });
   const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
   if (!res.ok) throw new Error(`Yahoo Finance HTTP ${res.status}`);
   const json = await res.json();

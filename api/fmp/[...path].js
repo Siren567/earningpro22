@@ -1,6 +1,6 @@
-// Vercel serverless function — proxies Financial Modeling Prep (FMP)
-// Injects the FMP_API_KEY from Vercel environment variables server-side.
-// The key is NEVER sent to or bundled in the browser.
+// Vercel serverless — proxies Financial Modeling Prep with server-side API key.
+
+import { parseProxyPath } from '../lib/parseProxyPath.js';
 
 export default async function handler(req, res) {
   const apiKey = process.env.FMP_API_KEY;
@@ -8,13 +8,22 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'FMP_API_KEY environment variable is not configured' });
   }
 
-  const { path: pathParts, ...query } = req.query;
-  const pathStr = Array.isArray(pathParts) ? pathParts.join('/') : (pathParts ?? '');
-  const qs = new URLSearchParams({ ...query, apikey: apiKey }).toString();
-  const url = `https://financialmodelingprep.com/${pathStr}?${qs}`;
+  const parsed = parseProxyPath(req, '/api/fmp');
+  if (!parsed) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  const { path, searchParams } = parsed;
+  const sp = new URLSearchParams(searchParams);
+  sp.set('apikey', apiKey);
+
+  const target = new URL(`https://financialmodelingprep.com/${path}`);
+  sp.forEach((v, k) => {
+    target.searchParams.set(k, v);
+  });
 
   try {
-    const upstream = await fetch(url);
+    const upstream = await fetch(target.toString());
     const body = await upstream.text();
     res
       .status(upstream.status)

@@ -307,6 +307,22 @@ const translations = {
     settings_days_remaining: "days remaining",
     settings_active_days: "Active —",
     settings_your_name: "Your Name",
+
+    // PWA / Install app
+    pwa_install_title: "Install StockPulse",
+    pwa_install_desc:
+      "Install the app for quick access, offline support, and a full-screen experience — like a native app on your device.",
+    pwa_install_button: "Install app",
+    pwa_install_ios_button: "Add to Home Screen (iPhone / iPad)",
+    pwa_install_toast_accepted: "App install started",
+    pwa_install_toast_dismissed: "Install dismissed — you can try again anytime from here.",
+    pwa_ios_modal_title: "Add StockPulse to your Home Screen",
+    pwa_ios_modal_intro:
+      "Safari doesn’t show a system install button. Follow these steps to add the app:",
+    pwa_ios_step1_title: "Open the Share menu",
+    pwa_ios_step1_desc: "Tap the Share icon at the bottom of Safari (square with arrow pointing up).",
+    pwa_ios_step2_title: "Add to Home Screen",
+    pwa_ios_step2_desc: 'Scroll and tap "Add to Home Screen", then confirm.',
     status_days: "days",
     status_day: "day",
 
@@ -817,6 +833,22 @@ const translations = {
     settings_days_remaining: "ימים נותרו",
     settings_active_days: "פעיל —",
     settings_your_name: "השם שלך",
+
+    // PWA / Install app
+    pwa_install_title: "התקנת StockPulse",
+    pwa_install_desc:
+      "התקינו את האפליקציה לגישה מהירה, תמיכה במצב לא מקוון וחוויית מסך מלא — כמו אפליקציה מקורית במכשיר.",
+    pwa_install_button: "התקן אפליקציה",
+    pwa_install_ios_button: "הוספה למסך הבית (iPhone / iPad)",
+    pwa_install_toast_accepted: "ההתקנה התחילה",
+    pwa_install_toast_dismissed: "ההתקנה בוטלה — אפשר לנסות שוב כאן בכל עת.",
+    pwa_ios_modal_title: "הוספת StockPulse למסך הבית",
+    pwa_ios_modal_intro:
+      "ב־Safari אין כפתור התקנה מערכתי. בצעו את השלבים הבאים:",
+    pwa_ios_step1_title: "פתחו את תפריט השיתוף",
+    pwa_ios_step1_desc: "הקישו על סמל השיתוף בתחתית Safari (ריבוע עם חץ למעלה).",
+    pwa_ios_step2_title: "הוספה למסך הבית",
+    pwa_ios_step2_desc: 'גללו והקישו על "הוסף למסך הבית" ואשרו.',
     status_days: "ימים",
     status_day: "יום",
 

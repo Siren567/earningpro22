@@ -29,6 +29,7 @@ import PasswordInput from '../components/settings/PasswordInput';
 import PasswordStrengthIndicator from '../components/settings/PasswordStrengthIndicator';
 import LanguageSelector from '../components/LanguageSelector';
 import NotificationsSettings from '../components/settings/NotificationsSettings';
+import PwaInstallSection from '../components/settings/PwaInstallSection';
 
 export default function Settings() {
   const { t, lang, setLang } = useLanguage();
@@ -452,6 +453,10 @@ export default function Settings() {
               >
                 {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
+            </div>
+
+            <div className="border-t dark:border-white/10 border-gray-200 pt-5">
+              <PwaInstallSection />
             </div>
           </div>
         </TabsContent>

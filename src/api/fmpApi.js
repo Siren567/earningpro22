@@ -14,7 +14,9 @@
  *   floatShares requires the dedicated shares-float endpoint.
  */
 
-const BASE = '/api/fmp';
+import { proxyApiUrl } from '@/lib/apiProxyUrls';
+
+const fmp = (path, query) => proxyApiUrl('fmp', path, query);
 
 // In-memory cache: symbol → { data, fetchedAt }
 const _cache = new Map();
@@ -45,8 +47,8 @@ export async function getFmpProfile(symbol) {
 
     // Fetch profile and shares-float in parallel
     const [profileRes, floatRes] = await Promise.allSettled([
-      fetch(`${BASE}/stable/profile?symbol=${encodeURIComponent(key)}`, opts),
-      fetch(`${BASE}/stable/shares-float?symbol=${encodeURIComponent(key)}`, opts),
+      fetch(fmp('stable/profile', { symbol: key }), opts),
+      fetch(fmp('stable/shares-float', { symbol: key }), opts),
     ]);
 
     // ── Profile → marketCap + derive sharesOutstanding ─────────────────────

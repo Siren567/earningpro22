@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, X, Plus, Check, Loader2, Star, ChevronRight } from 'lucide-react';
 import StockLogo from '../stock/StockLogo';
 import { supabase } from '@/lib/supabase';
+import { proxyApiUrl } from '@/lib/apiProxyUrls';
 
 export default function SearchModal({
   isOpen,
@@ -100,10 +101,13 @@ export default function SearchModal({
     queryFn: async () => {
       console.log('[search] query:', debouncedQuery);
       try {
-        const url =
-          `/api/yf/v1/finance/search` +
-          `?q=${encodeURIComponent(debouncedQuery)}` +
-          `&quotesCount=20&newsCount=0&enableFuzzyQuery=true&enableNavLinks=false`;
+        const url = proxyApiUrl('yf', 'v1/finance/search', {
+          q: debouncedQuery,
+          quotesCount: 20,
+          newsCount: 0,
+          enableFuzzyQuery: true,
+          enableNavLinks: false,
+        });
         const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (!res.ok) {
           console.warn('[search] API returned HTTP', res.status, '— using fallback data');

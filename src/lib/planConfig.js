@@ -37,3 +37,16 @@ export function getEffectivePlan(rawPlan) {
 export function getPlanLimits(planOrRaw) {
   return PLAN_LIMITS[getEffectivePlan(planOrRaw)] ?? PLAN_LIMITS.free;
 }
+
+/**
+ * Returns true if the user should have full premium feature access.
+ * Owners and admins always bypass plan-based restrictions regardless of
+ * what subscription_plan is stored in their profile.
+ *
+ * @param {string|null} role    - profile.role: 'owner' | 'admin' | 'user' | null
+ * @param {string|null} rawPlan - profile.subscription_plan
+ */
+export function hasPremiumAccess(role, rawPlan) {
+  if (role === 'owner' || role === 'admin') return true;
+  return getEffectivePlan(rawPlan) === 'premium';
+}
