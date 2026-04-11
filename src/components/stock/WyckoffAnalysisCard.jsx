@@ -22,6 +22,11 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { useLanguage } from '@/components/LanguageContext';
 import { canRunAiToday, incrementAiUsage, getAiUsageRemaining } from '@/lib/aiUsageTracker';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
+import { WyckoffComingSoonCard } from './WyckoffComingSoon';
+
+// ─── Coming Soon flag ──────────────────────────────────────────────────────────
+// Set to false to re-enable the live Wyckoff feature.
+const WYCKOFF_COMING_SOON = true;
 
 // ─── Colour palette ────────────────────────────────────────────────────────────
 const COLOR = {
@@ -207,8 +212,16 @@ const RatingDots = ({ rating = 0 }) => (
   </div>
 );
 
-// ─── Main component ────────────────────────────────────────────────────────────
-export default function WyckoffAnalysisCard({ symbol, companyName }) {
+// ─── Public export ─────────────────────────────────────────────────────────────
+// Wrapper that switches between the coming-soon card and the live feature.
+export default function WyckoffAnalysisCard(props) {
+  if (WYCKOFF_COMING_SOON) return <WyckoffComingSoonCard />;
+  return <WyckoffAnalysisCardInner {...props} />;
+}
+
+// ─── Live implementation (inactive while WYCKOFF_COMING_SOON = true) ──────────
+function WyckoffAnalysisCardInner({ symbol, companyName }) {
+
   const [state, setState]           = useState('idle');
   const [analysisData, setAnalysis] = useState(null);
   const [chartData, setChartData]   = useState([]);

@@ -1,6 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { X, Crown, Check } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { X, Crown, Check, Loader2 } from 'lucide-react';
+import { useAuth } from '@/components/auth/AuthContext';
+import { useStripeActions } from '@/hooks/useStripeActions';
+
+const PRO_PRICE_ID = import.meta.env.VITE_STRIPE_PRO_PRICE_ID ?? '';
 
 const REASONS = {
   watchlist_limit: {
@@ -69,9 +73,29 @@ const REASONS = {
 };
 
 export default function UpgradeModal({ open, onClose, reason = 'premium_feature' }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { startCheckout, loading: stripeLoading, error: stripeError } = useStripeActions();
+
   if (!open) return null;
 
   const content = REASONS[reason] ?? REASONS.premium_feature;
+
+  const handleUpgrade = async () => {
+    if (!user) {
+      onClose();
+      navigate('/Auth');
+      return;
+    }
+    if (!PRO_PRICE_ID) {
+      // Fallback: go to plans page if env var missing
+      onClose();
+      navigate('/Plans');
+      return;
+    }
+    await startCheckout(PRO_PRICE_ID);
+    // on success, browser navigates to Stripe — no need to close modal
+  };
 
   return (
     <div
@@ -120,14 +144,21 @@ export default function UpgradeModal({ open, onClose, reason = 'premium_feature'
           ))}
         </div>
 
+        {/* Stripe error */}
+        {stripeError && (
+          <p className="text-xs text-red-400 mb-3 text-center">{stripeError}</p>
+        )}
+
         {/* CTA */}
-        <Link
-          to="/Plans"
-          onClick={onClose}
-          className="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+        <button
+          onClick={handleUpgrade}
+          disabled={stripeLoading}
+          className="flex items-center justify-center gap-2 w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
         >
-          Upgrade to Premium
-        </Link>
+          {stripeLoading
+            ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
+            : 'Upgrade to Premium'}
+        </button>
 
         <p className="text-[11px] dark:text-gray-600 text-gray-400 text-center mt-3">
           Cancel anytime · Instant access

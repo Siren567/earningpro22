@@ -15,7 +15,9 @@ const LS_KEY = 'watchlist_items';
  *   toggle    (symbol, assetType?) => Promise<void>  — add if absent, remove if present
  */
 export function useWatchlist() {
-  const { user, profile } = useAuth();
+  const auth = useAuth();
+  const user    = auth?.user    ?? null;
+  const profile = auth?.profile ?? null;
   const [items, setItems] = useState([]); // [{ symbol, asset_type }]
   const [loading, setLoading] = useState(false);
 

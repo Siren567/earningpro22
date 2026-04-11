@@ -47,23 +47,26 @@ async function requireAdmin(req: Request): Promise<AuthResult> {
   }
 
   try {
+    // Extract the raw JWT string — strip "Bearer " prefix if present.
+    // We pass the token directly to getUser(jwt) which takes the fast path:
+    // a single HTTP GET /auth/v1/user call with Authorization: Bearer <jwt>.
+    // This avoids the no-args getUser() path which goes through _acquireLock +
+    // initializePromise + __loadSession (storage read) — that path can silently
+    // return AuthSessionMissingError when there is no stored session in a fresh
+    // edge-function client, even though the Authorization header is valid.
+    const jwt = rawAuth.startsWith("Bearer ") ? rawAuth.slice(7) : rawAuth;
+    console.log("[auth] jwt extracted, length:", jwt.length, "| preview:", jwt.slice(0, 20) + "…");
+
     const supabase = createClient(supabaseUrl, anonKey, {
-      global: {
-        headers: {
-          Authorization: rawAuth,
-        },
-      },
-      auth: {
-        persistSession: false,
-      },
+      auth: { persistSession: false },
     });
 
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser(jwt);
 
-    console.log("[auth] getUser error:", error?.message ?? "none", "| hasUser:", !!user, "| userId:", user?.id ?? "null");
+    console.log("[auth] getUser(jwt) error:", error?.message ?? "none", "| hasUser:", !!user, "| userId:", user?.id ?? "null");
 
     if (error || !user) {
       return {

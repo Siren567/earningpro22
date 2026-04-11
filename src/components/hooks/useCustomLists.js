@@ -25,7 +25,8 @@ const LS_KEY = 'watchlist_custom_categories';
  *   removeSymbolFromList (symbol, listId) => void
  */
 export function useCustomLists() {
-  const { user } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user ?? null;
   const [customCategories, setCustomCategories] = useState({});
   const [listsLoading, setListsLoading] = useState(false);
 

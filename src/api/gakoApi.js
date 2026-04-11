@@ -98,17 +98,18 @@ export async function wyckoffAnalysis({ symbol, companyName, priceData, accessTo
     ` | token preview: ${accessToken.slice(0, 20)}…`
   );
 
-  // supabase.functions is a getter that returns a brand-new FunctionsClient on each
-  // access (see SupabaseClient.ts). That client is built with only the static anon-key
-  // headers — it has NO automatic session/JWT injection and no setAuth() wiring.
-  // invoke() merges: { Content-Type } + { apikey, X-Client-Info } + caller headers.
-  // The Authorization header will NEVER appear unless we pass it explicitly here.
-  console.log('[gakoApi] attaching Authorization header to invoke — token preview:', accessToken.slice(0, 20) + '…');
+  // supabase.functions is a getter — each access returns a new FunctionsClient.
+  // Capture ONE instance and call setAuth() on it so the Authorization header is
+  // set via the SDK's own mechanism before invoke() reads this.headers.
+  // This avoids passing headers directly to invoke() while still correctly wiring
+  // the Bearer token through the FunctionsClient's setAuth() API.
+  const fns = supabase.functions;
+  fns.setAuth(accessToken);
+  console.log('[gakoApi] setAuth() called on FunctionsClient — token preview:', accessToken.slice(0, 20) + '…');
   let data, invokeError;
   try {
-    ({ data, error: invokeError } = await supabase.functions.invoke('gako-wyckoff', {
+    ({ data, error: invokeError } = await fns.invoke('gako-wyckoff', {
       body: { symbol, companyName, priceData },
-      headers: { Authorization: `Bearer ${accessToken}` },
     }));
   } catch (networkErr) {
     console.error('[gakoApi] wyckoffAnalysis network error:', networkErr.message);

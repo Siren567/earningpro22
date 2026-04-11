@@ -1,7 +1,8 @@
-import React from 'react';
-import { Clock, TrendingUp, Activity, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Clock, TrendingUp, Activity, Zap, HelpCircle } from 'lucide-react';
 import GeckoIcon from '../icons/GeckoIcon';
 import { useLanguage } from '../LanguageContext';
+import { GeckoVisionPreviewModal } from './GeckoVisionPreview';
 
 // ── Faint chart illustration (decorative) ────────────────────────────────────
 function ChartIllustration() {
@@ -108,25 +109,42 @@ function ComingSoonBody() {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function GeckoVision() {
   const { t } = useLanguage();
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   return (
-    <div className="rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-100 overflow-hidden">
+    <>
+      <GeckoVisionPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} />
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b dark:border-white/5 border-gray-100">
-        <div className="flex items-center gap-2">
-          <GeckoIcon className="w-3.5 h-3.5 dark:text-gray-500 text-gray-400" />
-          <h2 className="text-sm font-semibold dark:text-white text-gray-900">Gecko Vision</h2>
-          {/* "Soon" badge — replaces "Beta" */}
-          <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded dark:bg-amber-500/10 bg-amber-50 dark:text-amber-500/70 text-amber-500 uppercase tracking-widest">
-            <Clock className="w-2.5 h-2.5" />
-            {t('lang_coming_soon')}
-          </span>
+      <div className="rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-100 overflow-hidden">
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b dark:border-white/5 border-gray-100">
+          <div className="flex items-center gap-2">
+            <GeckoIcon className="w-3.5 h-3.5 dark:text-gray-500 text-gray-400" />
+            <h2 className="text-sm font-semibold dark:text-white text-gray-900">Gecko Vision</h2>
+            {/* "Soon" badge */}
+            <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded dark:bg-amber-500/10 bg-amber-50 dark:text-amber-500/70 text-amber-500 uppercase tracking-widest">
+              <Clock className="w-2.5 h-2.5" />
+              {t('lang_coming_soon')}
+            </span>
+            {/* Preview trigger */}
+            <button
+              onClick={() => setPreviewOpen(true)}
+              title="See a preview of the upcoming chart analysis feature"
+              className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
+              style={{ color: '#64748b' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#60a5fa'}
+              onMouseLeave={e => e.currentTarget.style.color = '#64748b'}
+            >
+              <HelpCircle size={14} />
+            </button>
+          </div>
         </div>
+
+        {/* ── Body: coming soon ── */}
+        <ComingSoonBody />
+
       </div>
-
-      {/* ── Body: coming soon ── */}
-      <ComingSoonBody />
-
-    </div>
+    </>
   );
 }

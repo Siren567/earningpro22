@@ -1,4 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Component } from 'react';
+
+// ── ErrorBoundary — catches render errors in children so the rest of
+//    the Dashboard keeps working even if one widget throws ──────────────────────
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err) { console.error('[ErrorBoundary]', err); }
+  render() {
+    if (this.state.hasError) return this.props.fallback ?? null;
+    return this.props.children;
+  }
+}
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, RefreshCw, Crown, Lock } from 'lucide-react';
@@ -436,8 +451,12 @@ export default function Dashboard() {
 
         {/* ── Right sidebar ────────────────────────────────────────── */}
         <div className="xl:sticky xl:top-4 space-y-4">
-          <WatchlistSidebar />
-          <EarningsSidebarCard />
+          <ErrorBoundary>
+            <WatchlistSidebar />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <EarningsSidebarCard />
+          </ErrorBoundary>
         </div>
       </div>
     </div>

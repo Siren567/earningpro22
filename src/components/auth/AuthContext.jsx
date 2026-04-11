@@ -1,7 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 
-const AuthContext = createContext();
+// Safe default — prevents "Cannot destructure property of undefined" if used outside provider.
+const AuthContext = createContext({
+  user:          null,
+  profile:       null,
+  loading:       true,
+  isAdminProfile: false,
+  login:         async () => ({ success: false, error: 'Not ready' }),
+  register:      async () => ({ success: false, error: 'Not ready' }),
+  logout:        async () => {},
+  refreshProfile: async () => {},
+});
 
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
@@ -31,35 +41,45 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Core profile fetch — reusable so we can call it imperatively after checkout
+  const fetchProfile = React.useCallback(async (uid) => {
+    if (!uid) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(
+          'id, role, is_suspended, subscription_plan, ' +
+          'stripe_customer_id, stripe_subscription_id, ' +
+          'stripe_subscription_status, subscription_period_end'
+        )
+        .eq('id', uid)
+        .maybeSingle();
+
+      if (error) {
+        console.error('[auth] profile fetch failed', error.message);
+      } else {
+        setProfile(data ?? null);
+      }
+    } catch (e) {
+      console.error('[auth] profile fetch threw', e);
+    }
+  }, []);
+
   // Fetch profile whenever user changes
   useEffect(() => {
     if (!user?.id) return;
+    setLoading(true);
+    fetchProfile(user.id).finally(() => setLoading(false));
+  }, [user?.id, fetchProfile]);
 
-    const fetchProfile = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, role, is_suspended, subscription_plan')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('[auth] profile fetch failed', error.message);
-          setProfile(null);
-        } else {
-          setProfile(data ?? null);
-        }
-      } catch (e) {
-        console.error('[auth] profile fetch threw', e);
-        setProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [user?.id]);
+  /**
+   * Call this after Stripe checkout completes to pick up the updated
+   * subscription_plan without requiring a full page reload.
+   */
+  const refreshProfile = React.useCallback(() => {
+    if (!user?.id) return Promise.resolve();
+    return fetchProfile(user.id);
+  }, [user?.id, fetchProfile]);
 
   const isAdminProfile = useMemo(() => profile?.role === 'admin', [profile?.role]);
 
@@ -108,7 +128,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdminProfile, login, register, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdminProfile, login, register, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

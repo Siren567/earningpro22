@@ -10,6 +10,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 
 import Landing from './pages/Landing';
 import Plans from './pages/Plans';
+import CheckoutReturn from './pages/CheckoutReturn';
 import Auth from './pages/Auth';
 import AuthCallback from './pages/AuthCallback';
 import Terms from './pages/Terms';
@@ -35,6 +36,7 @@ const AppRoutes = () => {
       <Route path="/Auth" element={<Auth />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/Terms" element={<Terms />} />
+      <Route path="/checkout-return" element={<CheckoutReturn />} />
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="/Earnings" element={<Earnings />} />

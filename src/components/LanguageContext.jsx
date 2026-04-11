@@ -1023,7 +1023,14 @@ const translations = {
   }
 };
 
-const LanguageContext = createContext();
+// Safe default so destructuring never throws if called outside the provider tree.
+const _fallbackT = (key) => key;
+const LanguageContext = createContext({
+  lang:    'en',
+  setLang: () => {},
+  t:       _fallbackT,
+  isRTL:   false,
+});
 
 export function LanguageProvider({ children }) {
   const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'en');

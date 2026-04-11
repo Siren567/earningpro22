@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   const supabaseUrl = env.VITE_SUPABASE_URL  || 'http://127.0.0.1:54321';
 
   return {
-    logLevel: 'error',
+    base: '/',
     server: {
       allowedHosts: 'all',
       proxy: {

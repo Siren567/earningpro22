@@ -7,7 +7,9 @@ import { useTheme } from '../components/ThemeContext';
 import { useLogout } from '../components/auth/useLogout';
 import { useAuth } from '../components/auth/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Shield, CreditCard, Globe, Sun, Moon, Save, LogOut, AlertCircle, Wand2, Bell, User } from 'lucide-react';
+import { Shield, CreditCard, Globe, Sun, Moon, Save, LogOut, AlertCircle, Wand2, Bell, User, Crown, Loader2, ExternalLink } from 'lucide-react';
+import { useSubscription } from '@/components/hooks/useSubscription';
+import { useStripeActions } from '@/hooks/useStripeActions';
 
 function getInitials(first, last) {
   const f = (first || '').trim();
@@ -38,11 +40,10 @@ export default function Settings() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  // ── Auth user from Supabase (always available for logged-in users) ──────────
-  // user.email         → email address
-  // user.created_at    → account creation timestamp
-  // user.user_metadata → { first_name, last_name, birth_date } stored at signup
-  const { user } = useAuth();
+  // ── Auth user + live Supabase profile ────────────────────────────────────────
+  const { user, profile: authProfile } = useAuth();
+  const { isPremium, plan }  = useSubscription();
+  const { openPortal, startCheckout, loading: stripeLoading, error: stripeError } = useStripeActions();
 
   // ── Base44 profile — subscription data only (falls back to null if base44 dead) ─
   const { data: profile } = useQuery({
@@ -263,100 +264,74 @@ export default function Settings() {
               </div>
             </div>
 
+            {/* ── Subscription card ─────────────────────────────────── */}
             <div className="mt-6 p-4 rounded-xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-200">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs dark:text-gray-500 text-gray-500 uppercase font-semibold mb-3">{t('settings_subscription')}</p>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs dark:text-gray-500 text-gray-500 mb-1">{t('settings_plan_label')}</p>
-                      <p className="text-sm font-semibold dark:text-white text-gray-900">
-                        {profile?.subscription_plan === 'free' ? t('plans_free') : profile?.subscription_plan === 'premium' ? t('plans_premium') : t('plans_free')}
-                      </p>
-                    </div>
+              <p className="text-xs dark:text-gray-500 text-gray-500 uppercase font-semibold mb-4">
+                {t('settings_subscription')}
+              </p>
 
-                    <div>
-                      <p className="text-xs dark:text-gray-500 text-gray-500 mb-1.5">{t('settings_status')}</p>
-                      {(() => {
-                        const plan = profile?.subscription_plan;
-                        const isFree = !plan || plan.toLowerCase() === 'free';
-
-                        if (isFree) {
-                          return (
-                            <div>
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-blue-500/10 text-blue-500 border-blue-500/20">
-                                {t('settings_free_plan')}
-                              </div>
-                              <p className="text-[11px] dark:text-gray-500 text-gray-400 mt-1.5">
-                                {t('settings_on_free')}
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        if (!profile?.subscription_expiry) {
-                          return (
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-blue-500/10 text-blue-500 border-blue-500/20">
-                              {t('settings_active')}
-                            </div>
-                          );
-                        }
-
-                        const daysLeft = Math.ceil(
-                          (new Date(profile.subscription_expiry) - new Date()) / (1000 * 60 * 60 * 24)
-                        );
-
-                        let status = '';
-                        let badgeColor = '';
-                        let icon = null;
-
-                        if (daysLeft < 0) {
-                          status = t('settings_expired');
-                          badgeColor = 'bg-red-500/10 text-red-500 border-red-500/20';
-                          icon = <AlertCircle className="w-3 h-3" />;
-                        } else if (daysLeft < 3) {
-                          status = `${t('settings_expires_in')} ${daysLeft} ${daysLeft !== 1 ? t('status_days') : t('status_day')}`;
-                          badgeColor = 'bg-red-500/10 text-red-500 border-red-500/20';
-                          icon = <AlertCircle className="w-3 h-3" />;
-                        } else if (daysLeft < 14) {
-                          status = `${t('settings_expires_in')} ${daysLeft} ${t('status_days')}`;
-                          badgeColor = 'bg-orange-500/10 text-orange-500 border-orange-500/20';
-                          icon = <AlertCircle className="w-3 h-3" />;
-                        } else {
-                          status = `${t('settings_active_days')} ${daysLeft} ${t('settings_days_remaining')}`;
-                          badgeColor = 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-                        }
-
-                        return (
-                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${badgeColor}`}>
-                            {icon}
-                            {status}
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {(() => {
-                      const plan = profile?.subscription_plan;
-                      const isPaid = plan && plan.toLowerCase() !== 'free';
-                      if (!isPaid || !profile?.subscription_expiry) return null;
-                      return (
-                        <div>
-                          <p className="text-xs dark:text-gray-500 text-gray-500 mb-1">{t('settings_renewal')}</p>
-                          <p className="text-sm dark:text-gray-300 text-gray-700">
-                            {format(new Date(profile.subscription_expiry), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                      );
-                    })()}
-                  </div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                  isPremium ? 'bg-amber-400/10' : 'dark:bg-white/5 bg-gray-100'
+                }`}>
+                  <Crown className={`w-4 h-4 ${isPremium ? 'text-amber-400' : 'dark:text-gray-500 text-gray-400'}`} />
                 </div>
+                <div>
+                  <p className="text-sm font-semibold dark:text-white text-gray-900">
+                    {isPremium ? 'Pro Plan' : 'Free Plan'}
+                  </p>
+                  {isPremium && authProfile?.stripe_subscription_status && (
+                    <p className="text-xs dark:text-gray-500 text-gray-400 capitalize">
+                      {authProfile.stripe_subscription_status === 'active'   && 'Active'}
+                      {authProfile.stripe_subscription_status === 'trialing' && 'Trial active'}
+                      {authProfile.stripe_subscription_status === 'past_due' && '⚠ Payment past due'}
+                      {authProfile.stripe_subscription_status === 'canceled' && 'Canceled'}
+                    </p>
+                  )}
+                  {!isPremium && (
+                    <p className="text-xs dark:text-gray-500 text-gray-400">Limited access</p>
+                  )}
+                </div>
+
+                {isPremium && (
+                  <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                    Active
+                  </span>
+                )}
               </div>
 
-              {profile?.subscription_plan === 'free' && (
-                <Link to="/Plans" className="block mt-4">
-                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
+              {/* Period end */}
+              {isPremium && authProfile?.subscription_period_end && (
+                <p className="text-xs dark:text-gray-500 text-gray-400 mb-4">
+                  {authProfile.stripe_subscription_status === 'canceled'
+                    ? `Access until ${format(new Date(authProfile.subscription_period_end), 'MMM d, yyyy')}`
+                    : `Renews ${format(new Date(authProfile.subscription_period_end), 'MMM d, yyyy')}`}
+                </p>
+              )}
+
+              {/* Stripe error */}
+              {stripeError && (
+                <div className="mb-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                  <p className="text-xs text-red-400">{stripeError}</p>
+                </div>
+              )}
+
+              {/* CTA buttons */}
+              {isPremium ? (
+                <Button
+                  onClick={openPortal}
+                  disabled={stripeLoading}
+                  variant="outline"
+                  className="w-full gap-2 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"
+                >
+                  {stripeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+                  Manage Subscription
+                </Button>
+              ) : (
+                <Link to="/Plans" className="block">
+                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white gap-2">
+                    <Crown className="w-4 h-4" />
                     {t('settings_upgrade_plan')}
                   </Button>
                 </Link>
