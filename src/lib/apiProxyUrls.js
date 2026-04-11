@@ -6,6 +6,9 @@
  * filesystem routing for `api/yf/[...path].js` only matches ONE path segment after /api/yf/,
  * so URLs like /api/yf/v8/finance/chart/AAPL never reached the function and returned 404.
  * Dev: Vite proxy expands `_fp` into the real Yahoo/FMP path (see vite.config.js).
+ *
+ * Consumers: yahooFinanceApi.js, fmpApi.js (profile, shares-float, stock_news, logos),
+ * useEarningsData.js, SearchModal.jsx, WyckoffAnalysisCard.jsx, SearchResultsDropdown.jsx.
  */
 
 import { PROXY_FORWARD_PARAM } from '../../lib/proxyConstants.js';

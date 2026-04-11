@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { proxyApiUrl } from '@/lib/apiProxyUrls';
 import StockLogo from './StockLogo';
 
 const highlightText = (text, query) => {
@@ -98,7 +99,12 @@ export default function SearchResultsDropdown({
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {/* Logo */}
                 <div className="flex-shrink-0">
-                  <StockLogo symbol={stock.symbol} logoUrl={`https://financialmodelingprep.com/image-stock/${stock.symbol}.png`} className="w-8 h-8" />
+                  {/* FMP logos via /api/fmp?_fp=… so prod uses same proxy as stable/* (avoids direct FMP 404/CORS issues) */}
+                  <StockLogo
+                    symbol={stock.symbol}
+                    logoUrl={proxyApiUrl('fmp', `image-stock/${encodeURIComponent(stock.symbol)}.png`)}
+                    className="w-8 h-8"
+                  />
                 </div>
 
                 {/* Content */}

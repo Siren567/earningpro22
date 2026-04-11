@@ -36,6 +36,7 @@ async function fetchScreener(id) {
 }
 
 export async function fetchEarningsData() {
+  console.log('[dataSource] earnings calendar: Yahoo screener/saved ×', SCREENER_IDS.length, 'ids');
   const nowTs = Math.floor(Date.now() / 1000);
   const allResults = await Promise.allSettled(SCREENER_IDS.map(fetchScreener));
   const allQuotes = allResults.flatMap(r => r.status === 'fulfilled' ? r.value : []);

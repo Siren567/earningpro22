@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { searchWithCache } from '@/lib/stocksCache';
 import { Search, Loader2, X } from 'lucide-react';

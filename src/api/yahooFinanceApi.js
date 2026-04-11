@@ -471,3 +471,57 @@ export async function getStockQuote(symbol) {
     afterHoursChangePercent: m.postMarketChangePercent ?? null,
   };
 }
+
+// ─────────────────────────────────────────────
+// 6. EARNINGS (next date) — calendarEvents via same /api/yf?_fp= proxy
+// ─────────────────────────────────────────────
+
+/**
+ * Next reported earnings date from Yahoo quoteSummary.calendarEvents.
+ * Shape matches legacy getStockEarnings enough for StockView (nextEarningsDate).
+ */
+export async function getStockEarningsFromYahoo(symbol) {
+  if (!symbol) return null;
+  const enc = encodeURIComponent(symbol);
+  const urls = [
+    yf(`v10/finance/quoteSummary/${enc}`, {
+      modules: 'calendarEvents',
+      formatted: true,
+      corsDomain: 'finance.yahoo.com',
+    }),
+    yf2(`v10/finance/quoteSummary/${enc}`, {
+      modules: 'calendarEvents',
+      formatted: true,
+      corsDomain: 'finance.yahoo.com',
+    }),
+  ];
+
+  for (let i = 0; i < urls.length; i++) {
+    try {
+      const res = await fetch(urls[i], { signal: AbortSignal.timeout(6000) });
+      if (!res.ok) continue;
+      const json = await res.json();
+      const row = json?.quoteSummary?.result?.[0];
+      const dates = row?.calendarEvents?.earnings?.earningsDate;
+      if (!Array.isArray(dates) || dates.length === 0) continue;
+
+      const entry = dates[0];
+      const rawTs = entry?.raw ?? (typeof entry === 'number' ? entry : null);
+      if (rawTs == null || !Number.isFinite(Number(rawTs))) continue;
+
+      const nextEarningsDate = new Date(Number(rawTs) * 1000).toISOString().slice(0, 10);
+      console.log('[dataSource] earnings: Yahoo quoteSummary', symbol, nextEarningsDate, `(attempt ${i})`);
+      return {
+        nextEarningsDate,
+        nextEstimatedEPS: null,
+        previousEarningsDate: null,
+        previousEstimatedEPS: null,
+        previousActualEPS: null,
+        history: [],
+      };
+    } catch (err) {
+      console.warn('[yahooEarnings] attempt failed:', symbol, err?.message ?? err);
+    }
+  }
+  return null;
+}

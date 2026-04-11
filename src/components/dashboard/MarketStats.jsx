@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getStockQuote } from '@/api/yahooFinanceApi';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function MarketStats() {
@@ -8,11 +8,12 @@ export default function MarketStats() {
     queryKey: ['marketStats'],
     queryFn: async () => {
       const symbols = ['AAPL', 'SPY', 'QQQ'];
+      console.log('[dataSource] MarketStats: Yahoo v8/chart', symbols.join(', '));
       const quotes = await Promise.all(
         symbols.map(async (symbol) => {
           try {
-            const res = await base44.functions.invoke('getStockQuote', { symbol });
-            return { symbol, ...res.data };
+            const data = await getStockQuote(symbol);
+            return { symbol, ...data };
           } catch {
             return null;
           }

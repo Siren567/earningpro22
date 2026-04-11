@@ -1,40 +1,91 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getStockData } from '@/api/yahooFinanceApi';
 import { useQuery } from '@tanstack/react-query';
-import { useLanguage } from '../components/LanguageContext';
 import { Activity, TrendingUp, AlertCircle, Loader2, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+
+/** Curated liquid names — replaces Base44 Stock.list (no backend required). */
+const OPPORTUNITIES_SEED = [
+  { id: 'AAPL', symbol: 'AAPL', company_name: 'Apple Inc.' },
+  { id: 'MSFT', symbol: 'MSFT', company_name: 'Microsoft Corporation' },
+  { id: 'GOOGL', symbol: 'GOOGL', company_name: 'Alphabet Inc.' },
+  { id: 'AMZN', symbol: 'AMZN', company_name: 'Amazon.com Inc.' },
+  { id: 'NVDA', symbol: 'NVDA', company_name: 'NVIDIA Corporation' },
+  { id: 'META', symbol: 'META', company_name: 'Meta Platforms Inc.' },
+  { id: 'TSLA', symbol: 'TSLA', company_name: 'Tesla Inc.' },
+  { id: 'AVGO', symbol: 'AVGO', company_name: 'Broadcom Inc.' },
+  { id: 'ORCL', symbol: 'ORCL', company_name: 'Oracle Corporation' },
+  { id: 'CRM', symbol: 'CRM', company_name: 'Salesforce Inc.' },
+  { id: 'AMD', symbol: 'AMD', company_name: 'Advanced Micro Devices' },
+  { id: 'INTC', symbol: 'INTC', company_name: 'Intel Corporation' },
+  { id: 'QCOM', symbol: 'QCOM', company_name: 'Qualcomm Inc.' },
+  { id: 'NFLX', symbol: 'NFLX', company_name: 'Netflix Inc.' },
+  { id: 'DIS', symbol: 'DIS', company_name: 'The Walt Disney Company' },
+  { id: 'JPM', symbol: 'JPM', company_name: 'JPMorgan Chase & Co.' },
+  { id: 'BAC', symbol: 'BAC', company_name: 'Bank of America Corp.' },
+  { id: 'XOM', symbol: 'XOM', company_name: 'Exxon Mobil Corporation' },
+  { id: 'CVX', symbol: 'CVX', company_name: 'Chevron Corporation' },
+  { id: 'WMT', symbol: 'WMT', company_name: 'Walmart Inc.' },
+  { id: 'JNJ', symbol: 'JNJ', company_name: 'Johnson & Johnson' },
+  { id: 'UNH', symbol: 'UNH', company_name: 'UnitedHealth Group' },
+  { id: 'LLY', symbol: 'LLY', company_name: 'Eli Lilly and Company' },
+  { id: 'V', symbol: 'V', company_name: 'Visa Inc.' },
+  { id: 'MA', symbol: 'MA', company_name: 'Mastercard Inc.' },
+  { id: 'PG', symbol: 'PG', company_name: 'Procter & Gamble' },
+  { id: 'HD', symbol: 'HD', company_name: 'Home Depot Inc.' },
+  { id: 'MRK', symbol: 'MRK', company_name: 'Merck & Co.' },
+  { id: 'ABBV', symbol: 'ABBV', company_name: 'AbbVie Inc.' },
+  { id: 'COST', symbol: 'COST', company_name: 'Costco Wholesale' },
+  { id: 'PEP', symbol: 'PEP', company_name: 'PepsiCo Inc.' },
+  { id: 'KO', symbol: 'KO', company_name: 'The Coca-Cola Company' },
+  { id: 'MCD', symbol: 'MCD', company_name: "McDonald's Corporation" },
+  { id: 'CSCO', symbol: 'CSCO', company_name: 'Cisco Systems Inc.' },
+  { id: 'ADBE', symbol: 'ADBE', company_name: 'Adobe Inc.' },
+  { id: 'PFE', symbol: 'PFE', company_name: 'Pfizer Inc.' },
+  { id: 'TMO', symbol: 'TMO', company_name: 'Thermo Fisher Scientific' },
+  { id: 'ACN', symbol: 'ACN', company_name: 'Accenture plc' },
+  { id: 'DHR', symbol: 'DHR', company_name: 'Danaher Corporation' },
+  { id: 'VZ', symbol: 'VZ', company_name: 'Verizon Communications' },
+  { id: 'NKE', symbol: 'NKE', company_name: 'Nike Inc.' },
+  { id: 'PM', symbol: 'PM', company_name: 'Philip Morris International' },
+  { id: 'TXN', symbol: 'TXN', company_name: 'Texas Instruments' },
+  { id: 'NEE', symbol: 'NEE', company_name: 'NextEra Energy' },
+  { id: 'RTX', symbol: 'RTX', company_name: 'RTX Corporation' },
+  { id: 'HON', symbol: 'HON', company_name: 'Honeywell International' },
+  { id: 'LOW', symbol: 'LOW', company_name: "Lowe's Companies Inc." },
+  { id: 'UPS', symbol: 'UPS', company_name: 'United Parcel Service' },
+  { id: 'SPGI', symbol: 'SPGI', company_name: 'S&P Global Inc.' },
+  { id: 'INTU', symbol: 'INTU', company_name: 'Intuit Inc.' },
+  { id: 'IBM', symbol: 'IBM', company_name: 'IBM Corporation' },
+];
 
 export default function Opportunities() {
-  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
-  const [stocks, setStocks] = useState([]);
 
-  // Fetch top stocks to scan for volume spikes
-  const { data: topStocks = [], isLoading: loadingStocks } = useQuery({
-    queryKey: ['opportunitiesStocks'],
-    queryFn: async () => {
-      try {
-        const res = await base44.entities.Stock.list('-ai_score', 50);
-        return res || [];
-      } catch (err) {
-        console.warn('[Opportunities] Error fetching stocks:', err.message);
-        return [];
-      }
-    },
-    staleTime: 60000,
-  });
+  const topStocks = OPPORTUNITIES_SEED;
 
-  // Fetch quotes for volume spike calculation
+  useEffect(() => {
+    console.log('[dataSource] Opportunities:', topStocks.length, 'seed symbols; quotes: Yahoo /api/yf');
+  }, [topStocks.length]);
+
   const { data: quotes = {}, isLoading: loadingQuotes } = useQuery({
     queryKey: ['opportunitiesQuotes', topStocks.map(s => s.symbol).join(',')],
     queryFn: async () => {
       if (topStocks.length === 0) return {};
 
+      // Volume + avgVolume need v8 chart series — same /api/yf?_fp= proxy as watchlist
       const promises = topStocks.map(stock =>
-        base44.functions.invoke('getStockQuote', { symbol: stock.symbol })
-          .then(res => ({ symbol: stock.symbol, data: res.data || null }))
+        getStockData(stock.symbol)
+          .then((d) => ({
+            symbol: stock.symbol,
+            data: d
+              ? {
+                  current: d.price,
+                  volume: d.volume,
+                  avgVolume: d.avgVolume,
+                }
+              : null,
+          }))
           .catch(() => ({ symbol: stock.symbol, data: null }))
       );
 
@@ -84,7 +135,7 @@ export default function Opportunities() {
     return spikeB - spikeA;
   });
 
-  const isLoading = loadingStocks || loadingQuotes;
+  const isLoading = loadingQuotes;
 
   return (
     <div className="space-y-6">

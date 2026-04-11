@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getStockQuote } from '@/api/yahooFinanceApi';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function LivePriceCard({ stock }) {
@@ -9,8 +9,8 @@ export default function LivePriceCard({ stock }) {
   useEffect(() => {
     const fetchPrice = async () => {
       try {
-        const res = await base44.functions.invoke('getStockQuote', { symbol: stock.symbol });
-        setLiveData(res.data);
+        const q = await getStockQuote(stock.symbol);
+        setLiveData(q);
       } catch (error) {
         console.error('Price fetch error:', error);
       } finally {

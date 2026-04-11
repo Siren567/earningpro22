@@ -7,6 +7,7 @@
  * Endpoints used:
  *   /stable/profile        → mktCap, price  (derive sharesOutstanding = mktCap / price)
  *   /stable/shares-float   → floatShares (outstandingShares, freeFloat)
+ *   /api/v3/stock_news     → headlines (StockView news strip)
  *
  * Why two endpoints:
  *   /stable/profile does NOT include sharesOutstanding or floatShares fields.
@@ -98,5 +99,75 @@ export async function getFmpProfile(symbol) {
   } catch (err) {
     console.warn('[fmp] failed for', key, '—', err.message);
     return null;
+  }
+}
+
+const EMPTY_KEY_METRICS = {
+  source: null,
+  marketCap: null,
+  floatShares: null,
+  sharesOutstanding: null,
+  peRatio: null,
+  roe: null,
+  debtToEquity: null,
+  freeCashFlowPerShare: null,
+  revenuePerShare: null,
+  netIncomePerShare: null,
+};
+
+/**
+ * Supplement KeyMetricsGrid: float / shares / mcap when Yahoo gaps.
+ * Logs [dataSource] for production debugging.
+ */
+export async function getFmpKeyMetricsBridge(symbol) {
+  if (!symbol) return { ...EMPTY_KEY_METRICS };
+  const p = await getFmpProfile(symbol);
+  if (!p) {
+    console.log('[dataSource] keyMetrics supplement: none — Yahoo fundamentals only', symbol);
+    return { ...EMPTY_KEY_METRICS };
+  }
+  console.log('[dataSource] keyMetrics supplement: FMP (mcap/float/shares)', symbol);
+  return {
+    ...EMPTY_KEY_METRICS,
+    source: 'FMP',
+    marketCap: p.marketCap,
+    floatShares: p.floatShares,
+    sharesOutstanding: p.sharesOutstanding,
+  };
+}
+
+/**
+ * Company news headlines (Finnhub-shaped objects) via FMP v3.
+ */
+export async function getFmpStockNews(symbol, limit = 12) {
+  if (!symbol) return [];
+  const key = symbol.toUpperCase();
+  const url = fmp('api/v3/stock_news', { tickers: key, limit });
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) {
+      console.warn('[dataSource] news: FMP HTTP', res.status, key);
+      return [];
+    }
+    const rows = await res.json();
+    if (!Array.isArray(rows)) {
+      console.warn('[dataSource] news: FMP empty payload', key);
+      return [];
+    }
+    const out = rows.slice(0, limit).map((article) => ({
+      title: article.title ?? article.headline ?? '',
+      source: article.site ?? article.source ?? 'FMP',
+      url: article.url ?? '',
+      publishedAt: article.publishedDate
+        ? new Date(article.publishedDate).toISOString()
+        : null,
+      summary: article.text ?? article.summary ?? null,
+      image: article.image ?? null,
+    }));
+    console.log('[dataSource] news: FMP', key, out.length, 'articles');
+    return out;
+  } catch (err) {
+    console.warn('[dataSource] news: FMP error', key, err?.message ?? err);
+    return [];
   }
 }

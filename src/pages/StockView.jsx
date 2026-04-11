@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
-import { getFmpProfile } from '@/api/fmpApi';
+import { getFmpKeyMetricsBridge } from '@/api/fmpApi';
 import { useWatchlist } from '../components/hooks/useWatchlist';
 import {
-  getStockQuote        as yahooGetStockQuote,
-  getStockFundamentals as yahooGetFundamentals,
+  getStockQuote            as yahooGetStockQuote,
+  getStockFundamentals     as yahooGetFundamentals,
+  getStockEarningsFromYahoo as yahooGetStockEarnings,
 } from '@/api/yahooFinanceApi';
 import {
   getCachedStockData as yahooGetStockData,
@@ -187,17 +187,12 @@ export default function StockView() {
     return saved ? JSON.parse(saved) : {};
   });
   const prevPriceRef = useRef(null);
-  const [finnhubToken, setFinnhubToken] = useState(null);
+
+  /** Optional: set VITE_FINNHUB_API_KEY for browser WS ticks; otherwise Yahoo polling only (no Base44). */
+  const finnhubWsKey = (import.meta.env.VITE_FINNHUB_API_KEY || '').trim() || null;
 
   // Supabase-backed watchlist (falls back to localStorage for guests)
   const { symbols: watchlistSymbols, isSaved: isInWatchlist, toggle: toggleWatchlist } = useWatchlist();
-
-  // Fetch Finnhub WS token once on mount
-  useEffect(() => {
-    base44.functions.invoke('getFinnhubWsToken')
-      .then(res => { if (res.data?.token) setFinnhubToken(res.data.token); })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('watchlist_custom_categories', JSON.stringify(customCategories));
@@ -303,9 +298,9 @@ export default function StockView() {
   const { data: searchResults = [], isLoading: isSearching } = useQuery({
     queryKey: ['stockSearch', debouncedQuery],
     queryFn: async () => {
-      console.log('[StockView Search] Querying for:', debouncedQuery);
+      console.log('[dataSource] search: Yahoo v1/finance/search', debouncedQuery);
       const data = await yahooSearchStocks(debouncedQuery);
-      console.log('[StockView Search] Results received:', data.length, '| symbols:', data.slice(0, 5).map(r => r.symbol).join(', '));
+      console.log('[dataSource] search results:', data.length, data.slice(0, 5).map(r => r.symbol).join(', '));
       return data;
     },
     // NOT gated by showDropdown — ensures mobile always fetches even if dropdown state lags
@@ -327,7 +322,7 @@ export default function StockView() {
       if (!normalizedSymbol) return null;
       try {
         const data = await yahooGetStockData(normalizedSymbol);
-        console.log(`[StockView] Stock data loaded for ${normalizedSymbol}:`, {
+        console.log('[dataSource] profile: Yahoo v8/chart', normalizedSymbol, {
           name: data.companyName, price: data.price, status: data.marketStatus,
         });
         return data;
@@ -367,7 +362,7 @@ export default function StockView() {
       if (!normalizedSymbol) return null;
       try {
         const data = await yahooGetStockQuote(normalizedSymbol);
-        console.log('[StockView] Quote loaded for', normalizedSymbol, '— price:', data.current);
+        console.log('[dataSource] quote: Yahoo v8/chart', normalizedSymbol, 'price:', data.current);
         return data;
       } catch (err) {
         console.warn('[Quote] Error:', err.message);
@@ -381,13 +376,23 @@ export default function StockView() {
     refetchOnWindowFocus: false,
   });
 
-  // Finnhub WebSocket — real-time ticks (same source as TradingView)
-  // Only connect during market hours to save resources
+  // Finnhub WebSocket — optional; set VITE_FINNHUB_API_KEY (never use Base44 token)
   const isMarketOpen = marketStatusValue?.toUpperCase() === 'REGULAR';
-  const { wsPrice, wsConnected, wsError } = useFinnhubWebSocket(
-    isMarketOpen && finnhubToken ? normalizedSymbol : null,
-    finnhubToken
+  const { wsPrice, wsConnected } = useFinnhubWebSocket(
+    isMarketOpen && finnhubWsKey ? normalizedSymbol : null,
+    finnhubWsKey
   );
+
+  useEffect(() => {
+    if (!normalizedSymbol) return;
+    console.log('[dataSource] StockView pipeline', normalizedSymbol, {
+      quote: 'Yahoo /api/yf',
+      fundamentals: 'Yahoo /api/yf|yf2',
+      keyMetricsSupplement: 'FMP /api/fmp',
+      earnings: 'Yahoo',
+      ticks: finnhubWsKey ? 'Finnhub WS (VITE_FINNHUB_API_KEY)' : 'Yahoo poll only',
+    });
+  }, [normalizedSymbol, finnhubWsKey]);
 
   // Enable automatic 5-second polling ONLY after initial load completes
   useMarketDataRefresh(
@@ -409,33 +414,14 @@ export default function StockView() {
     }
   }, [effectiveCurrentPrice]);
 
-  const { data: earnings = null, isLoading: loadingEarnings } = useQuery({
+  const { data: earnings = null } = useQuery({
     queryKey: ['stockEarnings', normalizedSymbol],
     queryFn: async () => {
       if (!normalizedSymbol) return null;
-      try {
-        const res = await base44.functions.invoke('getStockEarnings', { symbol: normalizedSymbol });
-        return res.data || null;
-      } catch (err) {
-        console.warn('[Earnings] Error:', err.message);
-        return null;
-      }
-    },
-    enabled: !!normalizedSymbol,
-    retry: 0,
-  });
-
-  const { data: news = [], isLoading: loadingNews } = useQuery({
-    queryKey: ['stockNews', normalizedSymbol],
-    queryFn: async () => {
-      if (!normalizedSymbol) return [];
-      try {
-        const res = await base44.functions.invoke('getStockNewsFinnhub', { symbol: normalizedSymbol });
-        return res.data || [];
-      } catch (err) {
-        console.warn('[News] Error:', err.message);
-        return [];
-      }
+      const y = await yahooGetStockEarnings(normalizedSymbol);
+      if (y?.nextEarningsDate) return y;
+      console.log('[dataSource] earnings: none (Yahoo calendarEvents empty)', normalizedSymbol);
+      return null;
     },
     enabled: !!normalizedSymbol,
     retry: 0,
@@ -443,48 +429,12 @@ export default function StockView() {
 
   const { data: keyMetricsResponse = null, isLoading: loadingMetrics } = useQuery({
     queryKey: ['keyMetrics', normalizedSymbol],
-    queryFn: async () => {
-      if (!normalizedSymbol) return null;
-      try {
-        console.log('[StockView] Calling getKeyMetricsFMP with symbol:', normalizedSymbol);
-        const res = await base44.functions.invoke('getKeyMetricsFMP', { symbol: normalizedSymbol });
-        const result = res.data;
-        
-        // Backend always returns { keyMetrics: {...} }
-        if (!result || typeof result !== 'object') {
-          console.warn('[KeyMetrics] No valid response for', normalizedSymbol);
-          return null;
-        }
-
-        const metricsObject = result?.keyMetrics;
-        if (!metricsObject) {
-          console.warn('[KeyMetrics] keyMetrics missing in response for', normalizedSymbol);
-          return null;
-        }
-
-        // Log source and data
-        console.log('[KeyMetrics] Data source for', normalizedSymbol, ':', metricsObject.source);
-        console.log('[KeyMetrics] Received for', normalizedSymbol, metricsObject);
-        return metricsObject;
-      } catch (err) {
-        console.warn('[KeyMetrics] Base44 failed, trying FMP directly:', err.message);
-        // Base44 backend unavailable — fetch the three fields we need from FMP directly
-        try {
-          const fmp = await getFmpProfile(normalizedSymbol);
-          if (fmp) console.log('[KeyMetrics] FMP fallback succeeded for', normalizedSymbol, fmp);
-          return fmp; // { marketCap, sharesOutstanding, floatShares } or null
-        } catch (fmpErr) {
-          console.error('[KeyMetrics] FMP fallback also failed:', fmpErr.message);
-          return null;
-        }
-      }
-    },
+    queryFn: () => getFmpKeyMetricsBridge(normalizedSymbol),
     enabled: !!normalizedSymbol,
     retry: 0,
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
   });
 
-  // Stable keyMetrics object - always defined
   const keyMetrics = keyMetricsResponse || {
     source: null,
     peRatio: null,
@@ -492,14 +442,21 @@ export default function StockView() {
     debtToEquity: null,
     freeCashFlowPerShare: null,
     revenuePerShare: null,
-    netIncomePerShare: null
+    netIncomePerShare: null,
+    marketCap: null,
+    floatShares: null,
+    sharesOutstanding: null,
   };
 
   // Fundamentals from Yahoo v10/quoteSummary — provides marketCap, P/E, EPS TTM, avgVolume
   // which are not available from the v8/chart endpoint used by getStockData.
   const { data: fundamentals = null, isLoading: loadingFundamentals } = useQuery({
     queryKey: ['stockFundamentals', normalizedSymbol],
-    queryFn: () => yahooGetFundamentals(normalizedSymbol),
+    queryFn: async () => {
+      const f = await yahooGetFundamentals(normalizedSymbol);
+      console.log('[dataSource] fundamentals: Yahoo quoteSummary', normalizedSymbol, f ? 'ok' : 'empty');
+      return f;
+    },
     enabled: !!normalizedSymbol,
     staleTime: 5 * 60 * 1000, // 5 minutes — fundamentals change slowly
     retry: 1,

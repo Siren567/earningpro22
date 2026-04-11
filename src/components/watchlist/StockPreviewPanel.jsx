@@ -1,15 +1,21 @@
 import React from 'react';
 import { X, TrendingUp, TrendingDown, ExternalLink, Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { getStockQuote } from '@/api/yahooFinanceApi';
 import { getCachedStockData } from '@/lib/stocksCache';
 
 export default function StockPreviewPanel({ symbol, name, isOpen, onClose }) {
   const { data: quote, isLoading: loadingQuote } = useQuery({
     queryKey: ['previewQuote', symbol],
     queryFn: async () => {
-      const res = await base44.functions.invoke('getStockQuote', { symbol });
-      return res.data || null;
+      // Live quote via /api/yf?_fp=… (not Base44 /api/functions — avoids prod 404)
+      try {
+        const q = await getStockQuote(symbol);
+        console.log('[dataSource] StockPreviewPanel quote: Yahoo', symbol);
+        return q;
+      } catch {
+        return null;
+      }
     },
     enabled: isOpen && !!symbol,
     staleTime: 15000,
