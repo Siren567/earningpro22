@@ -8,8 +8,13 @@ const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 export default async function handler(req, res) {
+  // Vercel logs: confirms handler ran and raw URL (if 404 before this, route not deployed / rewrite ate request)
+  const rawUrl = req.url || '';
+  console.log('[api/yf]', req.method, rawUrl.slice(0, 200));
+
   const parsed = getForwardedUpstream(req);
   if (!parsed || !isYahooUpstreamPath(parsed.path)) {
+    console.warn('[api/yf] reject _fp', { parsed: parsed?.path, rawUrl: rawUrl.slice(0, 160) });
     return res.status(400).json({
       error: `Missing or invalid ${PROXY_FORWARD_PARAM} (expected Yahoo path like v8/finance/chart/SYMBOL)`,
     });

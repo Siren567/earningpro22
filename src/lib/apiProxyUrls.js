@@ -52,6 +52,18 @@ export function proxyApiUrl(proxy, resourcePath, query) {
 
   const href = `${base}/api/${proxy}?${qs}`;
 
+  // TEMP: visible in DevTools — confirms exact URL every Yahoo/FMP call uses (must include ?_fp=)
+  if (typeof window !== 'undefined') {
+    console.warn(
+      '[PROXY buildUrl]',
+      proxy.toUpperCase(),
+      '→',
+      href,
+      '| _fp segment:',
+      path.slice(0, 64) + (path.length > 64 ? '…' : '')
+    );
+  }
+
   // Guard: never ship path-style /api/yf/v8/... (Vercel 404). Correct shape is /api/yf?_fp=v8%2F...
   if (typeof window !== 'undefined') {
     try {

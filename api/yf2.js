@@ -7,6 +7,9 @@ const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 export default async function handler(req, res) {
+  const rawUrl = req.url || '';
+  console.log('[api/yf2]', req.method, rawUrl.slice(0, 200));
+
   const parsed = getForwardedUpstream(req);
   if (!parsed || !isYahooUpstreamPath(parsed.path)) {
     return res.status(400).json({

@@ -1,7 +1,7 @@
 // StockPulse AI — Service Worker
 // Handles: push notifications + static asset caching + offline fallback
 
-const CACHE = 'stockpulse-v3-fp-proxy';
+const CACHE = 'stockpulse-v4-proxy-url-debug';
 const OFFLINE_URL = '/offline.html';
 
 // ── Install: pre-cache offline fallback ──────────────────────────────────────
