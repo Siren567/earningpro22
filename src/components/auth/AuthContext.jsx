@@ -136,6 +136,9 @@ export function AuthProvider({ children }) {
       window.sessionStorage.setItem(GUEST_SESSION_KEY, '1');
     } catch { /* ignore */ }
     setIsGuest(true);
+    setUser(null);
+    setProfile(null);
+    setLoading(false);
     window.location.replace('/Dashboard');
   }, []);
 

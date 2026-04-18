@@ -355,6 +355,28 @@ export default function Auth() {
                   </button>
                 </div>
               )}
+
+              {mode === 'login' && (
+                <div className="pt-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 dark:bg-white/10 bg-gray-200" />
+                    <span className="text-[11px] uppercase tracking-wide dark:text-gray-500 text-gray-500">or</span>
+                    <div className="h-px flex-1 dark:bg-white/10 bg-gray-200" />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full mt-3 bg-cyan-500/15 text-cyan-300 hover:bg-cyan-500/25 border border-cyan-400/30"
+                    disabled={loading}
+                    onClick={() => enterGuestMode()}
+                  >
+                    {t('auth_continue_guest')}
+                  </Button>
+                  <p className="text-xs text-center dark:text-gray-500 text-gray-500 leading-relaxed px-1 mt-2">
+                    {t('auth_guest_hint')}
+                  </p>
+                </div>
+              )}
               {mode === 'register' && formData.password && (
                 <div className="mt-2 space-y-1">
                   <div className="flex items-center gap-2">
@@ -502,22 +524,7 @@ export default function Auth() {
               )}
             </Button>
 
-            {mode === 'login' && (
-              <div className="space-y-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full dark:border-white/15 dark:text-gray-200 dark:hover:bg-white/5"
-                  disabled={loading}
-                  onClick={() => enterGuestMode()}
-                >
-                  {t('auth_continue_guest')}
-                </Button>
-                <p className="text-xs text-center dark:text-gray-500 text-gray-500 leading-relaxed px-1">
-                  {t('auth_guest_hint')}
-                </p>
-              </div>
-            )}
+            {/* Guest CTA moved up (right under password section) so it's always visible */}
           </form>
 
           <div className="mt-6 text-center">
