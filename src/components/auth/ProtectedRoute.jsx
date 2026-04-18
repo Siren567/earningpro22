@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, profile, loading, isAdminProfile, isGuest } = useAuth();
 
-  if (loading) {
+  if (loading && !isGuest) {
     return (
       <div className="min-h-screen dark:bg-[#0a0a0f] bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />

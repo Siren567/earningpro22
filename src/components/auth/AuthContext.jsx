@@ -36,22 +36,31 @@ const AuthContext = createContext({
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(readGuestFromStorage);
+  const [loading, setLoading] = useState(!isGuest);
 
   useEffect(() => {
+    if (isGuest) {
+      setLoading(false);
+    }
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      if (u) {
-        clearGuestFromStorage();
-        setIsGuest(false);
-      }
-      setUser(u);
-      if (!u) {
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        const u = session?.user ?? null;
+        if (u) {
+          clearGuestFromStorage();
+          setIsGuest(false);
+        }
+        setUser(u);
+        if (!u) {
+          setLoading(false);
+        }
+      })
+      .catch((e) => {
+        console.error('[auth] getSession failed', e);
         setLoading(false);
-      }
-    });
+      });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
