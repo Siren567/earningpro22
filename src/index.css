@@ -87,8 +87,8 @@
   html {
     height: 100%;
     overflow-x: hidden;
-    /* Single vertical scrollport on body for auth/landing; in-app scroll is inside AppLayout <main> */
-    overflow-y: hidden;
+    /* Allow normal document scrolling; in-app scroll is still constrained inside AppLayout <main> */
+    overflow-y: auto;
     overscroll-behavior-x: none;
   }
 

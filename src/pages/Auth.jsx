@@ -246,6 +246,23 @@ export default function Auth() {
             </p>
           </div>
 
+          {mode === 'login' && (
+            <div className="mb-6 rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full bg-cyan-500/20 text-cyan-200 hover:bg-cyan-500/30 border border-cyan-400/30"
+                disabled={loading}
+                onClick={() => enterGuestMode()}
+              >
+                {t('auth_continue_guest')}
+              </Button>
+              <p className="mt-2 text-xs text-center dark:text-gray-400 text-gray-600 leading-relaxed">
+                {t('auth_guest_hint')}
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <>
