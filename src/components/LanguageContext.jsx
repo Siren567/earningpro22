@@ -129,6 +129,9 @@ const translations = {
     settings_upload_avatar: "Upload Avatar",
     settings_language: "Language",
     settings_theme: "Theme",
+    settings_guest_banner_title: "You're browsing as a guest",
+    settings_guest_banner_body: "Profile and password changes require an account.",
+    settings_guest_save_blocked: "Sign in or create an account to save these settings.",
     
     // Admin
     admin_title: "Admin Panel",
@@ -361,6 +364,9 @@ const translations = {
     auth_pwd_req_lower: "At least 1 lowercase letter",
     auth_pwd_req_number: "At least 1 number",
     auth_pwd_req_special: "At least 1 special character (!@#$%^&*)",
+    auth_continue_guest: "Continue as guest",
+    auth_guest_hint: "Explore the app with Free plan limits. Create an account anytime to unlock Premium.",
+    auth_guest_label: "Guest",
 
     // Hero
     hero_get_started: "Get Started Free",
@@ -655,6 +661,9 @@ const translations = {
     settings_upload_avatar: "העלה תמונה",
     settings_language: "שפה",
     settings_theme: "ערכת נושא",
+    settings_guest_banner_title: "אתה מדפדף כאורח",
+    settings_guest_banner_body: "שינוי פרופיל וסיסמה דורשים חשבון.",
+    settings_guest_save_blocked: "התחבר או צור חשבון כדי לשמור את ההגדרות.",
     
     // Admin
     admin_title: "פאנל ניהול",
@@ -887,6 +896,9 @@ const translations = {
     auth_pwd_req_lower: "לפחות אות קטנה אחת",
     auth_pwd_req_number: "לפחות ספרה אחת",
     auth_pwd_req_special: "לפחות תו מיוחד אחד (!@#$%^&*)",
+    auth_continue_guest: "המשך כאורח",
+    auth_guest_hint: "עיון באפליקציה עם מגבלות התוכנית החינמית. אפשר ליצור חשבון בכל עת כדי לפתוח פרימיום.",
+    auth_guest_label: "אורח",
 
     // Hero
     hero_get_started: "התחל בחינם",

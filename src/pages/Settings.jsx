@@ -42,7 +42,7 @@ export default function Settings() {
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   // ── Auth user + live Supabase profile ────────────────────────────────────────
-  const { user, profile: authProfile } = useAuth();
+  const { user, profile: authProfile, isGuest } = useAuth();
   const { isPremium, plan }  = useSubscription();
   const { openPortal, startCheckout, loading: stripeLoading, error: stripeError } = useStripeActions();
 
@@ -92,6 +92,10 @@ export default function Settings() {
 
   // ── Save — updates Supabase auth metadata (works without base44) ─────────
   const handleSaveProfile = async () => {
+    if (isGuest || !user) {
+      toast.error(t('settings_guest_save_blocked'));
+      return;
+    }
     setIsSaving(true);
     try {
       const { error } = await supabase.auth.updateUser({
@@ -129,6 +133,10 @@ export default function Settings() {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
+    if (isGuest || !user) {
+      toast.error(t('settings_guest_save_blocked'));
+      return;
+    }
     setPasswordError('');
     setPasswordSuccess('');
     setPasswordLoading(true);
@@ -203,6 +211,17 @@ export default function Settings() {
         </TabsList>
 
         <TabsContent value="profile" className="mt-6 space-y-6">
+          {isGuest && (
+            <div className="rounded-xl border border-[#4CBFF5]/25 bg-[#4CBFF5]/10 px-4 py-3 text-sm dark:text-gray-200 text-gray-800">
+              <p className="font-medium mb-1">{t('settings_guest_banner_title')}</p>
+              <p className="text-xs dark:text-gray-400 text-gray-600 leading-relaxed">
+                {t('settings_guest_banner_body')}{' '}
+                <Link to="/Auth" className="text-[#4CBFF5] font-medium hover:underline">{t('auth_register')}</Link>
+                {' · '}
+                <Link to="/Auth" className="text-[#4CBFF5] font-medium hover:underline">{t('auth_login')}</Link>
+              </p>
+            </div>
+          )}
           <div className="p-6 rounded-2xl dark:bg-white/[0.03] bg-white border dark:border-white/5 border-gray-200">
             {/* Avatar — initials-based, updates live as name is edited */}
             <div className="flex items-center gap-4 mb-6">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../LanguageContext';
 import { useLogout } from '../auth/useLogout';
+import { useAuth } from '../auth/AuthContext';
 import { LogOut, CreditCard, Bell, Settings } from 'lucide-react';
 
 function getInitials(first, last) {
@@ -25,6 +26,11 @@ import { Link } from 'react-router-dom';
 export default function UserDropdown({ profile }) {
   const { t } = useLanguage();
   const performLogout = useLogout();
+  const { isGuest } = useAuth();
+
+  const displayFirst = isGuest ? t('auth_guest_label') : profile?.first_name;
+  const displayLast  = isGuest ? '' : profile?.last_name;
+  const planLabel      = isGuest ? t('settings_free_plan') : `${profile?.subscription_plan || 'free'} plan`;
 
   return (
     <DropdownMenu>
@@ -34,15 +40,15 @@ export default function UserDropdown({ profile }) {
           style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)' }}
         >
           <span className="text-[13px] font-semibold text-white leading-none select-none">
-            {getInitials(profile?.first_name, profile?.last_name)}
+            {getInitials(displayFirst, displayLast)}
           </span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 dark:bg-[#1a1a2e] dark:border-white/10" align="end">
         <DropdownMenuLabel className="dark:text-white">
-          <p>{profile?.first_name} {profile?.last_name}</p>
+          <p>{displayFirst}{displayLast ? ` ${displayLast}` : ''}</p>
           <p className="text-xs font-normal dark:text-gray-500 text-gray-500 mt-0.5">
-            {profile?.subscription_plan || 'free'} plan
+            {planLabel}
           </p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="dark:bg-white/5" />

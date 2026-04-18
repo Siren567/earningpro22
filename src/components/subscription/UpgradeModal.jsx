@@ -74,7 +74,7 @@ const REASONS = {
 
 export default function UpgradeModal({ open, onClose, reason = 'premium_feature' }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { startCheckout, loading: stripeLoading, error: stripeError } = useStripeActions();
 
   if (!open) return null;
@@ -82,7 +82,7 @@ export default function UpgradeModal({ open, onClose, reason = 'premium_feature'
   const content = REASONS[reason] ?? REASONS.premium_feature;
 
   const handleUpgrade = async () => {
-    if (!user) {
+    if (!user || isGuest) {
       onClose();
       navigate('/Auth');
       return;

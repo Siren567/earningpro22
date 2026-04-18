@@ -1,12 +1,32 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 
+/** Session flag: browse the app without Supabase auth — free-tier limits only. */
+const GUEST_SESSION_KEY = 'sp_guest_session';
+
+function readGuestFromStorage() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.sessionStorage.getItem(GUEST_SESSION_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function clearGuestFromStorage() {
+  try {
+    window.sessionStorage.removeItem(GUEST_SESSION_KEY);
+  } catch { /* ignore */ }
+}
+
 // Safe default — prevents "Cannot destructure property of undefined" if used outside provider.
 const AuthContext = createContext({
   user:          null,
   profile:       null,
   loading:       true,
   isAdminProfile: false,
+  isGuest:       false,
+  enterGuestMode: () => {},
   login:         async () => ({ success: false, error: 'Not ready' }),
   register:      async () => ({ success: false, error: 'Not ready' }),
   logout:        async () => {},
@@ -17,11 +37,16 @@ export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(readGuestFromStorage);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
+      if (u) {
+        clearGuestFromStorage();
+        setIsGuest(false);
+      }
       setUser(u);
       if (!u) {
         setLoading(false);
@@ -31,6 +56,10 @@ export function AuthProvider({ children }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
+      if (u) {
+        clearGuestFromStorage();
+        setIsGuest(false);
+      }
       setUser(u);
       if (!u) {
         setProfile(null);
@@ -89,6 +118,18 @@ export function AuthProvider({ children }) {
     return { success: true };
   };
 
+  /**
+   * Guest session: no Supabase user — `useSubscription` treats missing profile as free tier.
+   * Full page navigation so the shell loads with the guest flag already in sessionStorage.
+   */
+  const enterGuestMode = React.useCallback(() => {
+    try {
+      window.sessionStorage.setItem(GUEST_SESSION_KEY, '1');
+    } catch { /* ignore */ }
+    setIsGuest(true);
+    window.location.replace('/Dashboard');
+  }, []);
+
   const register = async ({ email, password, first_name, last_name, birth_date }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -124,11 +165,26 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
+    clearGuestFromStorage();
+    setIsGuest(false);
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdminProfile, login, register, logout, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        loading,
+        isAdminProfile,
+        isGuest,
+        enterGuestMode,
+        login,
+        register,
+        logout,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

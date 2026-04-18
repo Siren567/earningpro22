@@ -10,7 +10,7 @@ import { getPlanLimits, hasPremiumAccess } from '../../lib/planConfig';
  * Always safe to call — defaults to 'free' if profile is not yet loaded.
  */
 export function useSubscription() {
-  const { user, profile } = useAuth();
+  const { user, profile, isGuest } = useAuth();
   const role    = profile?.role    ?? 'user';
   const rawPlan = profile?.subscription_plan ?? null;
 
@@ -26,6 +26,6 @@ export function useSubscription() {
     isFree:    !premium,
     role,                              // 'owner' | 'admin' | 'user'
     rawPlan:   rawPlan ?? 'free',      // stored plan, unchanged
-    isLoaded:  !!user && profile !== undefined,
+    isLoaded:  !!user || isGuest,
   };
 }

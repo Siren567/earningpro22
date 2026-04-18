@@ -23,16 +23,17 @@ const INDICES = [
 ];
 
 export default function DashboardHeader() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { t, lang, isRTL } = useLanguage();
 
   const firstName = useMemo(() => {
+    if (isGuest) return t('auth_guest_label');
     return (
       user?.user_metadata?.first_name ||
       user?.email?.split('@')[0]?.replace(/[._-]/g, ' ').split(' ')[0] ||
       'Trader'
     );
-  }, [user]);
+  }, [user, isGuest, t]);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();

@@ -36,7 +36,7 @@ export default function Auth() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [searchParams] = useSearchParams();
   
-  const { login, register } = useAuth();
+  const { login, register, user, isGuest, enterGuestMode } = useAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -47,6 +47,13 @@ export default function Auth() {
       setShowSuspension(true);
     }
   }, [searchParams]);
+
+  // Signed-in users and active guest sessions should not stay on the auth screen.
+  useEffect(() => {
+    if (user || isGuest) {
+      navigate('/Dashboard', { replace: true });
+    }
+  }, [user, isGuest, navigate]);
 
   const handleGeneratePassword = () => {
     const pwd = generateStrongPassword(16);
@@ -494,6 +501,23 @@ export default function Auth() {
                 mode === 'login' ? t('auth_login') : t('auth_register')
               )}
             </Button>
+
+            {mode === 'login' && (
+              <div className="space-y-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full dark:border-white/15 dark:text-gray-200 dark:hover:bg-white/5"
+                  disabled={loading}
+                  onClick={() => enterGuestMode()}
+                >
+                  {t('auth_continue_guest')}
+                </Button>
+                <p className="text-xs text-center dark:text-gray-500 text-gray-500 leading-relaxed px-1">
+                  {t('auth_guest_hint')}
+                </p>
+              </div>
+            )}
           </form>
 
           <div className="mt-6 text-center">
