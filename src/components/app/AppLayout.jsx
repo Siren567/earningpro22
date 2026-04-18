@@ -240,7 +240,7 @@ export default function AppLayout() {
         </header>
 
         {/* Page content — only this region scrolls on mobile */}
-        <main className="app-main-scroll max-w-[100vw] p-4 max-lg:flex-1 max-lg:min-h-0 max-lg:overflow-x-hidden max-lg:overflow-y-auto max-lg:overscroll-y-contain max-lg:pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:overflow-visible lg:p-6 lg:pb-6">
+        <main className="app-main-scroll max-w-[100vw] flex-1 min-h-0 overflow-x-hidden overflow-y-auto overscroll-y-contain p-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:p-6 lg:pb-6">
           <div className="mx-auto min-w-0 max-w-full">
             <Outlet />
           </div>
